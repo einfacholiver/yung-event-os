@@ -1,0 +1,350 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String        @id @default(cuid())
+  name           String?
+  email          String?       @unique
+  emailVerified  DateTime?
+  image          String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
+  tasks          Task[]
+  permissions    Permission[]
+  activityLogs   ActivityLog[]
+  accounts       Account[]
+  sessions       Session[]
+
+  @@unique([organizationId, id])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Organization {
+  id                  String               @id @default(cuid())
+  name                String
+  slug                String               @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now()) @updatedAt
+  users               User[]
+  events              Event[]
+  driveConnections    DriveConnection[]
+  driveItems          DriveItem[]
+  driveFolderMappings DriveFolderMapping[]
+  transactions        Transaction[]
+  invoices            Invoice[]
+  tasks               Task[]
+  permissions         Permission[]
+  activityLogs        ActivityLog[]
+}
+
+model Event {
+  id                  String               @id @default(cuid())
+  organizationId      String
+  name                String
+  slug                String
+  status              EventStatus          @default(DRAFT)
+  startsAt            DateTime?
+  endsAt              DateTime?
+  timezone            String               @default("Europe/Berlin")
+  location            String?
+  description         String?              @db.Text
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now()) @updatedAt
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  driveFolderMappings DriveFolderMapping[]
+  transactions        Transaction[]
+  invoices            Invoice[]
+  tasks               Task[]
+  permissions         Permission[]
+  activityLogs        ActivityLog[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, slug])
+  @@index([organizationId, status])
+}
+
+model DriveConnection {
+  id                  String                @id @default(cuid())
+  organizationId      String
+  accountEmail        String
+  status              DriveConnectionStatus @default(DISCONNECTED)
+  // Reference to an external secret store; never raw OAuth tokens.
+  credentialReference String?
+  lastSyncedAt        DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @default(now()) @updatedAt
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  items               DriveItem[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, accountEmail])
+}
+
+model DriveItem {
+  id               String               @id @default(cuid())
+  organizationId   String
+  connectionId     String
+  externalId       String
+  parentExternalId String?
+  name             String
+  mimeType         String
+  kind             DriveItemKind
+  webViewUrl       String?
+  modifiedAt       DateTime?
+  trashed          Boolean              @default(false)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @default(now()) @updatedAt
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  connection       DriveConnection      @relation(fields: [organizationId, connectionId], references: [organizationId, id], onDelete: Restrict)
+  folderMappings   DriveFolderMapping[]
+  invoices         Invoice[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, id, kind])
+  @@unique([connectionId, externalId])
+  @@index([organizationId, connectionId, parentExternalId])
+}
+
+model DriveFolderMapping {
+  driveItemKind  DriveItemKind      @default(FOLDER)
+  id             String             @id @default(cuid())
+  organizationId String
+  eventId        String
+  driveItemId    String
+  purpose        DriveFolderPurpose @default(ROOT)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  event          Event              @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+  driveItem      DriveItem          @relation(fields: [organizationId, driveItemId, driveItemKind], references: [organizationId, id, kind], onDelete: Restrict)
+
+  @@unique([eventId, purpose])
+  @@index([organizationId, driveItemId])
+}
+
+model Transaction {
+  id             String               @id @default(cuid())
+  organizationId String
+  eventId        String?
+  invoiceId      String?
+  direction      TransactionDirection
+  amount         Decimal              @db.Decimal(14, 2)
+  currency       String               @default("EUR") @db.VarChar(3)
+  bookedAt       DateTime
+  description    String?
+  reference      String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @default(now()) @updatedAt
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  event          Event?               @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+  invoice        Invoice?             @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, bookedAt])
+  @@index([organizationId, eventId])
+  @@index([organizationId, invoiceId])
+}
+
+model Invoice {
+  id             String           @id @default(cuid())
+  organizationId String
+  eventId        String?
+  driveItemId    String?
+  number         String?
+  counterparty   String
+  direction      InvoiceDirection
+  status         InvoiceStatus    @default(DRAFT)
+  totalAmount    Decimal          @db.Decimal(14, 2)
+  currency       String           @default("EUR") @db.VarChar(3)
+  issuedAt       DateTime?
+  dueAt          DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  event          Event?           @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+  driveItem      DriveItem?       @relation(fields: [organizationId, driveItemId], references: [organizationId, id], onDelete: Restrict)
+  transactions   Transaction[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, eventId])
+  @@index([organizationId, driveItemId])
+  @@index([organizationId, status, dueAt])
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  organizationId String
+  eventId        String?
+  assigneeId     String?
+  title          String
+  description    String?      @db.Text
+  status         TaskStatus   @default(TODO)
+  priority       TaskPriority @default(MEDIUM)
+  dueAt          DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  event          Event?       @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+  assignee       User?        @relation(fields: [organizationId, assigneeId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, eventId])
+  @@index([organizationId, assigneeId])
+  @@index([organizationId, status, dueAt])
+}
+
+model Permission {
+  id             String             @id @default(cuid())
+  organizationId String
+  userId         String
+  // Null means organization-wide; otherwise this grant applies to one event.
+  eventId        String?
+  resource       PermissionResource
+  action         PermissionAction
+  createdAt      DateTime           @default(now())
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user           User               @relation(fields: [organizationId, userId], references: [organizationId, id], onDelete: Cascade)
+  event          Event?             @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, userId])
+  @@index([organizationId, eventId])
+}
+
+model ActivityLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  eventId        String?
+  actorId        String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  event          Event?       @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+  actor          User?        @relation(fields: [organizationId, actorId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, eventId])
+  @@index([organizationId, actorId])
+  @@index([organizationId, entityType, entityId])
+}
+
+enum EventStatus {
+  DRAFT
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum DriveConnectionStatus {
+  DISCONNECTED
+  CONNECTED
+  ERROR
+}
+
+enum DriveItemKind {
+  FILE
+  FOLDER
+}
+
+enum DriveFolderPurpose {
+  ROOT
+  FINANCE
+  PRODUCTION
+  MARKETING
+}
+
+enum TransactionDirection {
+  INCOME
+  EXPENSE
+}
+
+enum InvoiceDirection {
+  INCOMING
+  OUTGOING
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PermissionResource {
+  ORGANIZATION
+  USER
+  EVENT
+  DRIVE
+  TRANSACTION
+  INVOICE
+  TASK
+  PERMISSION
+  ACTIVITY_LOG
+}
+
+enum PermissionAction {
+  READ
+  CREATE
+  UPDATE
+  DELETE
+  MANAGE
+}
