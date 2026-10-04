@@ -23,6 +23,12 @@ beforeAll(async () => {
       "utf8",
     ),
   );
+  await db.exec(
+    readFileSync(
+      "prisma/migrations/20261004020000_drive_connection/migration.sql",
+      "utf8",
+    ),
+  );
   await db.exec(`
     INSERT INTO "Organization" (id, name, slug) VALUES ('org-a', 'A', 'a'), ('org-b', 'B', 'b');
     INSERT INTO "User" (id, email, "organizationId") VALUES ('user-a', 'a@example.test', 'org-a'), ('user-b', 'b@example.test', 'org-b');
@@ -36,6 +42,20 @@ afterAll(async () => {
 });
 
 describe("core model SQL migration", () => {
+  it("stores a root folder id and rejects an incomplete selection", async () => {
+    await expect(
+      db.exec(
+        `UPDATE "DriveConnection" SET "rootFolderName" = 'Veranstaltungen' WHERE id = 'drive-a'`,
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
+    await db.exec(
+      `UPDATE "DriveConnection" SET "rootFolderId" = 'real-google-folder-id', "rootFolderName" = 'Veranstaltungen', "folderSelectedAt" = NOW() WHERE id = 'drive-a'`,
+    );
+    const result = await db.query<{ rootFolderId: string }>(
+      `SELECT "rootFolderId" FROM "DriveConnection" WHERE id = 'drive-a'`,
+    );
+    expect(result.rows[0].rootFolderId).toBe("real-google-folder-id");
+  });
   it("keeps existing auth users and backfills timestamps", async () => {
     const result = await db.query<{
       organizationId: string | null;

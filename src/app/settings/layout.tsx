@@ -2,9 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: { default: "Events | YUNG Event OS", template: "%s | YUNG Event OS" },
+  title: "Settings | YUNG Event OS",
+  robots: { index: false, follow: false },
 };
-export default function EventsLayout({
+export default function SettingsLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -14,8 +15,8 @@ export default function EventsLayout({
       <header className="bg-card border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
           <Link href="/" className="text-xl font-black tracking-tight">
-            YUNG
-            <span className="text-muted-foreground ml-2 text-xs font-medium tracking-widest">
+            YUNG{" "}
+            <span className="text-muted-foreground text-xs font-medium tracking-widest">
               EVENT OS
             </span>
           </Link>
@@ -23,17 +24,17 @@ export default function EventsLayout({
             aria-label="Hauptnavigation"
             className="flex items-center gap-4 text-sm"
           >
+            <Link href="/events">Events</Link>
             <Link
-              href="/events"
-              className="rounded-md bg-stone-100 px-4 py-2 text-sm font-medium"
+              href="/settings"
+              className="rounded-md bg-stone-100 px-4 py-2 font-medium"
             >
-              Events
+              Settings
             </Link>
-            <Link href="/settings">Settings</Link>
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-6 py-10 lg:px-10">{children}</main>
+      <main className="mx-auto max-w-5xl space-y-8 px-6 py-10">{children}</main>
     </div>
   );
 }

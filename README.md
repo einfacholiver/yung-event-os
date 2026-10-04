@@ -1,6 +1,8 @@
 # YUNG Event OS
 
-Technische Projektbasis mit elf Kernmodellen, Migrationen, Event-Seeds und einem lesenden Events-Modul. Keine AI-Funktionen, Ticketimporte, One.com- oder Google-Drive-Integration.
+Aktueller Funktionsumfang, Testablauf und offene Arbeit: [Teststand](docs/TESTING-AND-STATUS.md). Diese Bestandsaufnahme ersetzt frühere pauschale Fertigmeldungen.
+
+Technische Projektbasis mit elf Kernmodellen, Migrationen, Event-Seeds, einem lesenden Events-Modul und einer Google-Drive-Verbindung mit manuellem Metadaten-Sync. Noch kein automatisches Event-Mapping, keine AI-Funktionen, Ticketimporte oder One.com-Integration.
 
 ## Stack
 
@@ -36,7 +38,7 @@ Servermodule sind durch `server-only` vor Client-Imports geschützt. Geheimnisse
 
 ## Authentifizierung
 
-Die technischen Auth.js-Modelle Account, Session und VerificationToken bleiben zusätzlich zu den elf Kernmodellen erhalten. User ist gleichzeitig das Benutzer-Kernmodell. Eine initiale Migration liegt bei. Datenbanksessions und Prisma-Adapter sind vorbereitet. Es gibt noch keinen Provider, keine Anmeldemaske und keine Zugriffsregeln; Login ist noch nicht möglich. Vor einer späteren Freigabe müssen Provider und Zugriffsregeln implementiert werden. Hinter einem Reverse Proxy die Auth.js-Host-Konfiguration passend zur Deployment-Umgebung setzen.
+Auth.js verwendet Google OAuth, Datenbanksessions und den Prisma-Adapter. Die Drive-Verbindung erlaubt ausschließlich die verifizierte Google-Identität lightsignal.dj@gmail.com. OAuth-Tokens werden serverseitig verschlüsselt gespeichert. Die technischen Tabellen Account, Session und VerificationToken bleiben erhalten. Die Drive-Endpunkte prüfen Session, Organisation und Konto; das bestehende Events-Modul bleibt eine lokale Vorschau ohne allgemeinen Zugriffsschutz. Hinter einem Reverse Proxy die Auth.js-Host-Konfiguration passend zur Deployment-Umgebung setzen.
 
 ## Befehle
 
@@ -61,7 +63,9 @@ Weitere shadcn/ui-Komponenten mit `npx shadcn@latest add <komponente>` hinzufüg
 
 ## Google Drive
 
-Für zukünftige Zugriffe ausschließlich **lightsignal.dj@gmail.com** verwenden und die verbundene Identität vor Zugriff prüfen. Diese Vorgabe ist auch in AGENTS.md festgehalten. Keine Drive-Zugangsdaten, SDKs oder Integration eingerichtet.
+Unter `/settings/integrations/google-drive` verbinden, durch Meine Ablage navigieren und den Veranstaltungsordner auswählen. Gespeichert wird die echte Google-Folder-ID. Der Button „Drive synchronisieren“ schreibt ausschließlich Drive-Metadaten idempotent in `DriveItem`; Dateien werden nicht heruntergeladen. Ausschließlich **lightsignal.dj@gmail.com** ist erlaubt; die Identität wird vor jeder Drive-Operation geprüft. Einrichtung und manueller Abnahmetest: [docs/google-drive.md](docs/google-drive.md). Weitere Meilensteine: [docs/roadmap.md](docs/roadmap.md).
+
+Unter `/documents` stehen synchronisierte Dateien mit vollständigem Drive-Pfad, Eventfilter und direktem Google-Drive-Link bereit.
 
 ## Prüfstatus der ursprünglichen Grundlage (4. Oktober 2026)
 

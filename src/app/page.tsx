@@ -5,7 +5,7 @@ export default function Home() {
     <main className="flex min-h-screen items-center justify-center p-8">
       <section className="bg-card text-card-foreground w-full max-w-xl space-y-4 rounded-xl border p-8">
         <p className="text-muted-foreground text-sm font-medium tracking-widest uppercase">
-          Projektbasis
+          Lokaler Teststand
         </p>
         <h1 className="text-4xl font-semibold tracking-tight">YUNG Event OS</h1>
         <p className="text-muted-foreground">
@@ -15,6 +15,15 @@ export default function Home() {
         <Button asChild>
           <Link href="/events">Events öffnen</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/settings/integrations/google-drive">
+            Anmelden / Google Drive
+          </Link>
+        </Button>
+        <p className="text-muted-foreground text-sm">
+          Alle verfügbaren Bereiche erreichst du über die Navigation oben.
+          Sheets-Import, Ticketdaten und AI sind noch nicht verfügbar.
+        </p>
       </section>
     </main>
   );

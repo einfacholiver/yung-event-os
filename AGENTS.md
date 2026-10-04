@@ -1,6 +1,6 @@
 # Project instructions
 
-- Keep infrastructure separate from business features. Current scope: eleven core data models, technical Auth.js tables, migrations, seed data and a read-only Events module with detail sections. No AI, ticket imports, One.com or active Google Drive integration.
+- Keep infrastructure separate from business features. User-authorized scope now includes Drive sync/mapping, documents, finances, invoices, tasks, analytics and future Sheets/ticket/AI integrations. Implement and validate each phase; never describe a scaffold as a finished integration. One.com remains out of scope.
 - For all future Google Drive operations in this project, use only lightsignal.dj@gmail.com. Verify the connected identity before accessing Drive. If it cannot be verified, do not access Drive.
 - Run npm run lint, npm run typecheck, npm run test, and npm run build after relevant changes.
 
