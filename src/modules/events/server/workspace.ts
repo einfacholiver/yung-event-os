@@ -6,8 +6,7 @@ import { DriveError } from "@/modules/drive/errors";
 
 export async function requireEvent(id: string) {
   const user = await requireDriveUser().catch((error: unknown) => {
-    if (error instanceof DriveError && error.status === 401)
-      redirect("/settings/integrations/google-drive");
+    if (error instanceof DriveError && error.status === 401) redirect("/login");
     throw error;
   });
   const event = await getDb().event.findFirst({

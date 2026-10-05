@@ -1,5 +1,9 @@
 # YUNG Event OS
 
+Die Anwendung ist jetzt ausschließlich nach Admin-Anmeldung zugänglich. Login,
+Zugriffstests und die Voraussetzungen für den Serverbetrieb stehen unter
+[Admin-Zugang](docs/ADMIN-LOGIN.md).
+
 Aktueller Funktionsumfang, Testablauf und offene Arbeit: [Teststand](docs/TESTING-AND-STATUS.md). Diese Bestandsaufnahme ersetzt frühere pauschale Fertigmeldungen.
 
 Technische Projektbasis mit elf Kernmodellen, Migrationen, Event-Seeds, einem lesenden Events-Modul und einer Google-Drive-Verbindung mit manuellem Metadaten-Sync. Noch kein automatisches Event-Mapping, keine AI-Funktionen, Ticketimporte oder One.com-Integration.

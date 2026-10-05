@@ -5,12 +5,11 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { getDb } from "@/server/db/client";
 import { googleEnvSchema } from "@/config/env";
 import { encryptToken } from "./token-cipher";
+import { isAdminIdentity, LOGIN_PATH } from "./policy";
 import {
   DRIVE_ACCOUNT_EMAIL,
   DRIVE_METADATA_SCOPE,
-  DRIVE_SETTINGS_PATH,
   hasDriveScope,
-  isAllowedGoogleIdentity,
 } from "@/modules/drive/config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
@@ -35,8 +34,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
       },
     },
     secret: env.AUTH_SECRET,
-    session: { strategy: "database" },
-    pages: { signIn: DRIVE_SETTINGS_PATH, error: DRIVE_SETTINGS_PATH },
+    session: { strategy: "database", maxAge: 8 * 60 * 60 },
+    pages: { signIn: LOGIN_PATH, error: LOGIN_PATH },
     providers: [
       Google({
         clientId: env.GOOGLE_CLIENT_ID,
@@ -54,11 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
     ],
     callbacks: {
       async signIn({ account, profile }) {
-        return (
-          account?.provider === "google" &&
-          isAllowedGoogleIdentity(profile) &&
-          hasDriveScope(account.scope)
-        );
+        return account?.provider === "google" && isAdminIdentity(profile);
       },
       async session({ session, user }) {
         session.user.id = user.id;
@@ -71,8 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
           !user.id ||
           !account ||
           account.provider !== "google" ||
-          !isAllowedGoogleIdentity(profile) ||
-          !hasDriveScope(account.scope)
+          !isAdminIdentity(profile)
         )
           throw new Error("Google identity rejected.");
         await db.$transaction(async (tx) => {
@@ -91,6 +85,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
             where: { id: user.id },
             data: { organizationId: organization.id },
           });
+          // App sign-in does not require Drive permissions. Preserve existing
+          // Drive tokens and mappings when only identity scopes are returned.
+          if (!hasDriveScope(account.scope)) return;
           const saved = await tx.account.update({
             where: {
               provider_providerAccountId: {

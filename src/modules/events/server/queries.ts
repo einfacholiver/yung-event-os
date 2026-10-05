@@ -1,14 +1,12 @@
 import "server-only";
 import { cache } from "react";
 import { getDb } from "@/server/db/client";
-
-// Single-organization preview until authenticated organization selection exists.
-// Never accept the organization from URL parameters or the browser.
-const organizationSlug = "yung";
+import { requireAdmin } from "@/server/auth/access";
 
 export const getEvents = cache(async () => {
+  const { organizationId } = await requireAdmin();
   return getDb().event.findMany({
-    where: { organization: { slug: organizationSlug } },
+    where: { organizationId },
     orderBy: [{ createdAt: "asc" }, { slug: "asc" }],
     select: {
       id: true,
@@ -24,8 +22,9 @@ export const getEvents = cache(async () => {
 });
 
 export const getEvent = cache(async (id: string) => {
+  const { organizationId } = await requireAdmin();
   return getDb().event.findFirst({
-    where: { id, organization: { slug: organizationSlug } },
+    where: { id, organizationId },
     select: {
       id: true,
       name: true,

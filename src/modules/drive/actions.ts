@@ -13,6 +13,7 @@ import { driveErrorMessage } from "./errors";
 import { saveDriveFolder, disconnectDrive, syncDrive } from "./server/service";
 
 export async function connectGoogleDrive() {
+  await requireDriveUser();
   await signIn("google", { redirectTo: DRIVE_SETTINGS_PATH });
 }
 export async function enableEventFolderCreation() {
@@ -61,7 +62,7 @@ export async function enableDrivePreviews() {
 }
 
 export async function logoutGoogleDrive() {
-  await signOut({ redirectTo: DRIVE_SETTINGS_PATH });
+  await signOut({ redirectTo: "/login" });
 }
 
 export async function selectDriveFolder(folderId: string) {

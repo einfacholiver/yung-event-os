@@ -1,24 +1,20 @@
 import "server-only";
-import { auth } from "@/server/auth";
+import { AccessError, requireAdmin } from "@/server/auth/access";
 import { getDb } from "@/server/db/client";
 import { DRIVE_ACCOUNT_EMAIL } from "../config";
 import { DriveError } from "../errors";
 
 export async function requireDriveUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new DriveError("SIGN_IN", 401);
-  const user = await getDb().user.findUnique({
-    where: { id: session.user.id },
-    include: { organization: true },
-  });
-  if (
-    !user ||
-    user.email !== DRIVE_ACCOUNT_EMAIL ||
-    !user.organizationId ||
-    user.organization?.slug !== "yung"
-  )
-    throw new DriveError("FORBIDDEN", 403);
-  return { userId: user.id, organizationId: user.organizationId };
+  try {
+    return await requireAdmin();
+  } catch (error) {
+    if (error instanceof AccessError)
+      throw new DriveError(
+        error.status === 401 ? "SIGN_IN" : "FORBIDDEN",
+        error.status,
+      );
+    throw error;
+  }
 }
 
 export async function getDriveConnection() {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CalendarDays, FolderSync, ScanLine, Settings2 } from "lucide-react";
+import { logoutAdmin } from "@/server/auth/actions";
 
 const links = [
   { href: "/events", label: "Events", icon: CalendarDays },
@@ -60,6 +61,14 @@ export function WorkspaceNavigation() {
               </Link>
             );
           })}
+          <form action={logoutAdmin} className="flex items-center">
+            <button
+              type="submit"
+              className="text-muted-foreground hover:bg-secondary hover:text-foreground rounded-lg px-3 py-2.5 text-sm font-medium"
+            >
+              Abmelden
+            </button>
+          </form>
         </nav>
       </div>
     </header>

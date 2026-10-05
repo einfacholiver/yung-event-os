@@ -22,6 +22,7 @@ beforeEach(() => {
     email: "lightsignal.dj@gmail.com",
     organizationId: "org",
     organization: { slug: "yung" },
+    accounts: [{ provider: "google", providerAccountId: "google-id" }],
   });
 });
 it("rejects unauthenticated access before database queries", async () => {
