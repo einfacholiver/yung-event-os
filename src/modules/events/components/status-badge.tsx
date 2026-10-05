@@ -1,20 +1,24 @@
 import { statusLabels } from "../config";
 
 const styles = {
-  DRAFT: "bg-stone-100 text-stone-700",
-  PLANNED: "bg-blue-50 text-blue-800",
-  ACTIVE: "bg-emerald-50 text-emerald-800",
-  COMPLETED: "bg-violet-50 text-violet-800",
-  CANCELLED: "bg-red-50 text-red-800",
+  DRAFT: "status-warning",
+  PLANNED: "status-info",
+  ACTIVE: "status-success",
+  COMPLETED: "status-success",
+  CANCELLED: "status-error",
 };
 export function StatusBadge({ status }: { status: keyof typeof statusLabels }) {
   return (
     <span
       className={
-        "inline-flex rounded-full px-3 py-1 text-xs font-medium " +
+        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium " +
         styles[status]
       }
     >
+      <span
+        aria-hidden="true"
+        className={`size-1.5 rounded-full ${status === "DRAFT" ? "bg-warning" : status === "PLANNED" ? "bg-info" : status === "CANCELLED" ? "bg-destructive" : "bg-success"}`}
+      />
       {statusLabels[status]}
     </span>
   );

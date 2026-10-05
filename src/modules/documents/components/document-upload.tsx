@@ -22,12 +22,13 @@ export function DocumentUpload({
   );
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [failed, setFailed] = useState(false);
   const [started, setStarted] = useState(false);
   const requestId = useRef<string | null>(null);
   const selectedFile = useRef<File | null>(null);
   return (
     <form
-      className="space-y-3 rounded-xl border bg-white p-5"
+      className="bg-card space-y-3 rounded-xl border p-5"
       onSubmit={async (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -37,6 +38,7 @@ export function DocumentUpload({
         try {
           validateDocumentFile(file, purpose);
         } catch (error) {
+          setFailed(true);
           setMessage((error as Error).message);
           return;
         }
@@ -48,6 +50,7 @@ export function DocumentUpload({
         setPending(true);
         setStarted(true);
         setMessage("");
+        setFailed(false);
         try {
           const response = await fetch(`/api/events/${eventId}/documents`, {
             method: "POST",
@@ -55,6 +58,7 @@ export function DocumentUpload({
           });
           const result = await response.json();
           if (!response.ok) {
+            setFailed(true);
             setMessage(
               result.error ??
                 "Upload fehlgeschlagen. Bitte mit derselben Datei erneut versuchen.",
@@ -73,6 +77,7 @@ export function DocumentUpload({
           setStarted(false);
           router.refresh();
         } catch {
+          setFailed(true);
           setMessage(
             "Verbindung unterbrochen. Bitte mit derselben Datei erneut versuchen; derselbe Upload erzeugt keine zweite Drive-Datei.",
           );
@@ -117,7 +122,7 @@ export function DocumentUpload({
           }}
         />
       </label>
-      <p className="text-sm text-stone-600">
+      <p className="text-muted-foreground text-sm">
         Bis {uploadLimit(purpose) / 1_000_000} MB:{" "}
         {purpose === "MEDIA"
           ? "Bilder und Videos, z. B. JPG, PNG, WebP, HEIC, MP4 oder MOV."
@@ -128,7 +133,7 @@ export function DocumentUpload({
       <button
         type="submit"
         disabled={pending || !targets.length}
-        className="rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
+        className="bg-primary text-primary-foreground rounded px-4 py-2 disabled:opacity-50"
       >
         {pending
           ? "Lädt hoch …"
@@ -137,7 +142,10 @@ export function DocumentUpload({
             : "In Drive hochladen"}
       </button>
       {message && (
-        <p role="status" className="text-sm">
+        <p
+          role="status"
+          className={`rounded-lg px-3 py-2 text-sm ${failed ? "status-error" : "status-success"}`}
+        >
           {message}
         </p>
       )}

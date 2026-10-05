@@ -47,7 +47,7 @@ export default async function NewEventPage() {
             {context.connection.rootFolderName ?? "Veranstaltungen"}“.
             Vorhandene Unterlagen werden nicht verändert.
           </p>
-          <button className="rounded bg-stone-900 px-4 py-2 text-white">
+          <button className="bg-primary text-primary-foreground rounded px-4 py-2">
             Über Google freigeben
           </button>
         </form>

@@ -18,7 +18,7 @@ export default async function EventsPage() {
       </div>
       <Link
         href="/events/new"
-        className="inline-block rounded bg-stone-900 px-5 py-3 text-white"
+        className="bg-primary text-primary-foreground inline-block rounded px-5 py-3"
       >
         Neues Event
       </Link>

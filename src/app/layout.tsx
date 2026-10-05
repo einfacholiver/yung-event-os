@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { WorkspaceNavigation } from "@/components/workspace-navigation";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,22 +11,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="de">
+    <html lang="de" className="dark">
       <body>
-        <nav
-          aria-label="Arbeitsbereiche"
-          className="flex flex-wrap gap-4 border-b bg-stone-100 px-6 py-3 text-sm"
-        >
-          {[
-            ["/events", "Events"],
-            ["/check-in", "Check-in System"],
-            ["/settings/integrations/google-drive", "Google Drive"],
-          ].map(([href, label]) => (
-            <Link key={href} href={href} className="hover:underline">
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <WorkspaceNavigation />
         {children}
       </body>
     </html>

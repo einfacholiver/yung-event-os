@@ -128,7 +128,7 @@ export default async function EventSection({
   return (
     <section className="space-y-5">
       <h2 className="text-2xl font-semibold">{tab.label}</h2>
-      <p className="text-sm text-stone-600">
+      <p className="text-muted-foreground text-sm">
         Gespeicherter Drive-Stand für dieses Event. Extern hinzugefügte Dateien
         erscheinen nach „Drive synchronisieren“ in den Einstellungen; hier
         hochgeladene Dateien erscheinen direkt.
@@ -143,7 +143,7 @@ export default async function EventSection({
             <Link
               key={value}
               aria-current={(category ?? "") === value ? "page" : undefined}
-              className={`rounded border px-4 py-2 ${(category ?? "") === value ? "bg-stone-900 text-white" : ""}`}
+              className={`rounded border px-4 py-2 ${(category ?? "") === value ? "bg-primary text-primary-foreground" : ""}`}
               href={`/events/${id}/documents${value ? `?category=${value}` : ""}`}
             >
               {label}
@@ -210,7 +210,7 @@ export default async function EventSection({
             <Link
               key={value}
               aria-current={mediaType === value ? "page" : undefined}
-              className={`rounded border px-4 py-2 ${mediaType === value ? "bg-stone-900 text-white" : ""}`}
+              className={`rounded border px-4 py-2 ${mediaType === value ? "bg-primary text-primary-foreground" : ""}`}
               href={`/events/${id}/media${value ? `?mediaType=${value}` : ""}`}
             >
               {label} ({count})
@@ -239,7 +239,7 @@ export default async function EventSection({
       >
         {filtered.map((file) => (
           <div
-            className="block rounded-lg p-4 hover:bg-stone-100"
+            className="hover:bg-secondary block rounded-lg p-4"
             key={file.id}
           >
             {slug === "media" &&
@@ -258,7 +258,9 @@ export default async function EventSection({
             >
               {file.name} ↗
             </a>
-            <p className="mt-1 text-xs break-all text-stone-500">{file.path}</p>
+            <p className="text-muted-foreground mt-1 text-xs break-all">
+              {file.path}
+            </p>
             <p className="mt-2 text-xs">
               {file.mimeType.startsWith("image/")
                 ? "Bild"

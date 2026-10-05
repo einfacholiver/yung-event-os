@@ -55,7 +55,13 @@ export async function EventTickets({
             {orders.map((order) => (
               <tr className="border-t" key={order.id}>
                 <td className="p-3">{order.orderNumber}</td>
-                <td>{order.cancelled ? "Storniert" : order.paymentStatus}</td>
+                <td>
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${order.cancelled ? "status-error" : ["paid", "bezahlt"].includes(order.paymentStatus.toLowerCase()) ? "status-success" : "status-info"}`}
+                  >
+                    {order.cancelled ? "Storniert" : order.paymentStatus}
+                  </span>
+                </td>
                 <td>{order.tickets ?? "Unbekannt"}</td>
                 <td>{order.tables ?? "Unbekannt"}</td>
                 <td>{order.lounges ?? "Unbekannt"}</td>

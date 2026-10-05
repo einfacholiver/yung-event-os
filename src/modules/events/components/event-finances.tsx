@@ -39,7 +39,7 @@ export async function EventFinances({
       <h2 className="text-2xl font-semibold">
         {analytics ? "Analytics" : "Finanzen"}
       </h2>
-      <p className="text-sm text-stone-600">
+      <p className="text-muted-foreground text-sm">
         Aus deinen erfassten EUR-Buchungen. Drive-Rechnungen und
         Kostenübersichten werden nicht automatisch als Buchungen übernommen.
       </p>
@@ -50,9 +50,13 @@ export async function EventFinances({
           ["Gewinn", euro(totals.profit)],
           ["Marge", totals.margin],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border bg-white p-5">
-            <h3 className="text-sm text-stone-600">{label}</h3>
-            <p className="mt-2 text-2xl font-semibold">{value}</p>
+          <div key={label} className="metric-card p-5">
+            <h3 className="text-muted-foreground text-sm">{label}</h3>
+            <p
+              className={`mt-2 text-2xl font-semibold tracking-tight ${label === "Gewinn" ? (totals.profit >= 0n ? "text-success" : "text-red-300") : label === "Einnahmen" ? "text-primary" : ""}`}
+            >
+              {value}
+            </p>
           </div>
         ))}
       </div>
@@ -79,9 +83,9 @@ export async function EventFinances({
               <p>
                 {label}: {euro(value)}
               </p>
-              <div className="mt-2 h-5 rounded bg-stone-100">
+              <div className="bg-secondary mt-2 h-5 rounded">
                 <div
-                  className="h-5 rounded bg-stone-800"
+                  className="bg-primary h-5 rounded"
                   style={{
                     width: `${(Number(value) / Math.max(Number(totals.income), Number(totals.expenses), 1)) * 100}%`,
                   }}
@@ -97,7 +101,7 @@ export async function EventFinances({
         </div>
       ) : (
         <>
-          <div className="rounded-xl border bg-white p-5">
+          <div className="bg-card rounded-xl border p-5">
             <h3 className="mb-4 font-semibold">Neue Buchung</h3>
             <ApiForm
               endpoint="/api/finances/transactions"

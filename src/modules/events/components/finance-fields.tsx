@@ -11,7 +11,7 @@ export function FinanceFields({
     paidBy: string | null;
   };
 }) {
-  const style = "block w-full rounded border bg-white p-2";
+  const style = "block w-full rounded border bg-card p-2";
   return (
     <>
       <label>
@@ -82,7 +82,7 @@ export function FinanceFields({
             )}
         </select>
       </label>
-      <button className="self-end rounded bg-stone-900 px-4 py-2 text-white">
+      <button className="bg-primary text-primary-foreground self-end rounded px-4 py-2">
         Speichern
       </button>
     </>

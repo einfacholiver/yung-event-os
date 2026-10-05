@@ -17,6 +17,7 @@ export function ApiForm({
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <form
       className={className}
@@ -26,10 +27,12 @@ export function ApiForm({
         const body = new FormData(form);
         setSaving(true);
         setMessage("");
+        setFailed(false);
         try {
           const response = await fetch(endpoint, { method, body });
           const result = await response.json();
           if (!response.ok) {
+            setFailed(true);
             setMessage(result.error ?? "Speichern fehlgeschlagen.");
             return;
           }
@@ -37,6 +40,7 @@ export function ApiForm({
           setMessage("Gespeichert");
           router.refresh();
         } catch {
+          setFailed(true);
           setMessage("Server nicht erreichbar. Bitte erneut versuchen.");
         } finally {
           setSaving(false);
@@ -46,7 +50,10 @@ export function ApiForm({
       <fieldset disabled={saving} className="contents">
         {children}
       </fieldset>
-      <p role="status" className="col-span-full text-sm">
+      <p
+        role="status"
+        className={`col-span-full text-sm ${message ? `rounded-lg px-3 py-2 ${failed ? "status-error" : "status-success"}` : "text-muted-foreground"}`}
+      >
         {saving ? "Speichert …" : message}
       </p>
     </form>

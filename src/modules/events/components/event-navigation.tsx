@@ -20,8 +20,8 @@ export function EventNavigation({ eventId }: { eventId: string }) {
               className={
                 "border-b-2 px-4 py-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-4px] " +
                 (active
-                  ? "border-black text-black"
-                  : "text-muted-foreground hover:text-foreground border-transparent hover:border-stone-300")
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:border-primary/40 border-transparent")
               }
             >
               {tab.label}

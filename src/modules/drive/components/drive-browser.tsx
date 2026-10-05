@@ -154,7 +154,7 @@ export function DriveBrowser({
         </div>
         {selection && (
           <div>
-            <div className="mt-5 rounded-lg bg-stone-50 p-4 text-sm">
+            <div className="bg-background mt-5 rounded-lg p-4 text-sm">
               <p>
                 Gespeicherter Ordner: <strong>{selection.name}</strong>
               </p>
@@ -173,7 +173,7 @@ export function DriveBrowser({
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+          className="border-destructive/30 bg-destructive/10 text-foreground rounded-lg border p-4 text-sm"
         >
           {error}
         </div>
@@ -181,7 +181,7 @@ export function DriveBrowser({
       {notice && (
         <p
           role="status"
-          className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-900"
+          className="bg-success/10 text-foreground rounded-lg p-4 text-sm"
         >
           {notice}
         </p>
@@ -249,7 +249,7 @@ export function DriveBrowser({
                     <>
                       <Folder
                         aria-hidden="true"
-                        className="size-5 shrink-0 text-amber-600"
+                        className="text-warning size-5 shrink-0"
                       />
                       <button
                         disabled={loading || saving}

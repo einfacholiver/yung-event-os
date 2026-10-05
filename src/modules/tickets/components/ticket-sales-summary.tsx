@@ -18,7 +18,7 @@ export function TicketSalesSummary({
       .filter((item) => !category || item.category === category)
       .reduce((sum, item) => sum + cents(item.grossRevenue), 0n);
   return (
-    <div className="space-y-4 rounded-xl border bg-white p-5">
+    <div className="bg-card space-y-4 rounded-xl border p-5">
       <h3 className="text-xl font-semibold">Artikel-Verkaufsübersicht</h3>
       <div className="grid gap-3 sm:grid-cols-3">
         {[
@@ -27,14 +27,14 @@ export function TicketSalesSummary({
           ["Bruttoumsatz gesamt", revenue()],
         ].map(([label, total]) => (
           <div key={String(label)}>
-            <p className="text-sm text-stone-600">{String(label)}</p>
+            <p className="text-muted-foreground text-sm">{String(label)}</p>
             <p className="text-2xl font-semibold">{euro(total as bigint)}</p>
           </div>
         ))}
       </div>
       <div className="overflow-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-stone-100">
+          <thead className="bg-secondary">
             <tr>
               {[
                 "Artikelbeschreibung",
@@ -72,7 +72,7 @@ export function TicketSalesSummary({
           </tfoot>
         </table>
       </div>
-      <p className="text-sm text-stone-600">
+      <p className="text-muted-foreground text-sm">
         Vom Nutzer bereitgestellte Artikelübersicht. Gruppen-Tickets zählen hier
         als verkaufte Pakete; Upgrades sind keine zusätzlichen Eintrittstickets.
         Die Mengen sind keine gezählten Besucher. Diese Übersicht wird weder mit

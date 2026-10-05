@@ -54,7 +54,7 @@ export default async function FinancesPage() {
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Ausgaben</dt>
-                  <dd className="font-semibold text-red-700">
+                  <dd className="font-semibold text-red-300">
                     {expense.toFixed(2)} €
                   </dd>
                 </div>

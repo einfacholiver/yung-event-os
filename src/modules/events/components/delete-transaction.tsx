@@ -53,7 +53,7 @@ export function DeleteTransaction({
             <button
               type="button"
               disabled={pending}
-              className="rounded bg-red-700 px-3 py-2 text-white disabled:opacity-50"
+              className="bg-destructive text-primary-foreground rounded px-3 py-2 disabled:opacity-50"
               onClick={remove}
             >
               {pending ? "Löscht …" : "Endgültig löschen"}
@@ -74,14 +74,14 @@ export function DeleteTransaction({
       ) : (
         <button
           type="button"
-          className="rounded border border-red-700 px-3 py-2 text-red-700"
+          className="border-destructive/50 rounded border px-3 py-2 text-red-300"
           onClick={() => setConfirming(true)}
         >
           Löschen
         </button>
       )}
       {error && (
-        <p role="alert" className="text-red-700">
+        <p role="alert" className="text-red-300">
           {error}
         </p>
       )}

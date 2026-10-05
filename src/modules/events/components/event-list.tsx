@@ -71,7 +71,7 @@ export function EventList({ events }: { events: EventSummary[] }) {
               key={event.id}
               href={"/events/" + encodeURIComponent(event.id)}
               aria-label={event.name + " öffnen"}
-              className="bg-card group flex min-h-56 flex-col rounded-xl border p-6 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4"
+              className="event-card bg-card group flex min-h-56 flex-col rounded-xl border p-6 transition-all focus-visible:outline-2 focus-visible:outline-offset-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <StatusBadge status={event.status} />

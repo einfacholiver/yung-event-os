@@ -121,7 +121,7 @@ export function EventEdit({
             maxLength={10000}
           />
         </label>
-        <button className="rounded bg-stone-900 px-4 py-2 text-white">
+        <button className="bg-primary text-primary-foreground rounded px-4 py-2">
           {pending ? "Speichert …" : "Speichern"}
         </button>
         <button type="button" onClick={() => setOpen(false)}>

@@ -93,14 +93,14 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
       );
     });
   const filteredTotals = financeTotals(visible);
-  const style = "mt-1 block w-full rounded border bg-white p-2";
+  const style = "mt-1 block w-full rounded border bg-card p-2";
 
   return (
     <div className="space-y-3">
       <div
         role="group"
         aria-label="Buchungen filtern"
-        className="grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="bg-card grid gap-3 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4"
       >
         <label>
           Art
@@ -168,7 +168,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
       <p
         role="status"
         aria-label="Gefilterte Buchungsübersicht"
-        className="text-sm text-stone-600"
+        className="text-muted-foreground text-sm"
       >
         {visible.length} von {rows.length} Buchungen · Gefilterte EUR-Summen:
         Einnahmen {euro(filteredTotals.income)} · Ausgaben{" "}
@@ -181,7 +181,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
             Event-Buchungen. Spaltenüberschriften anklicken, um die Sortierung
             zu ändern.
           </caption>
-          <thead className="bg-stone-100">
+          <thead className="bg-secondary">
             <tr>
               {columns.map(([key, label]) => (
                 <th
@@ -198,7 +198,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
                 >
                   <button
                     type="button"
-                    className="rounded px-1 py-1 whitespace-nowrap hover:bg-stone-200 focus-visible:outline-2"
+                    className="hover:bg-muted rounded px-1 py-1 whitespace-nowrap focus-visible:outline-2"
                     onClick={() =>
                       setSort((previous) => ({
                         key,
@@ -235,7 +235,15 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
                     : "—"}
                 </td>
                 <td className="p-3">
-                  {row.isPaid ? "✓ Ja" : "Offen / unbestätigt"}
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${row.isPaid ? "status-success" : "status-error"}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`size-1.5 rounded-full ${row.isPaid ? "bg-success" : "bg-destructive"}`}
+                    />
+                    {row.isPaid ? "✓ Ja" : "Offen / unbestätigt"}
+                  </span>
                 </td>
                 <td className="p-3">
                   {row.isPaid ? (row.paidBy ?? "Nicht angegeben") : "—"}

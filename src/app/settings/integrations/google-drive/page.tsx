@@ -72,7 +72,7 @@ export default async function GoogleDriveSettings({
       {(params.error || denied) && (
         <p
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+          className="border-destructive/30 bg-destructive/10 text-foreground rounded-lg border p-4 text-sm"
         >
           Die Anmeldung konnte nicht abgeschlossen werden. Verwende{" "}
           {DRIVE_ACCOUNT_EMAIL} und erlaube den lesenden Zugriff auf
@@ -80,12 +80,12 @@ export default async function GoogleDriveSettings({
         </p>
       )}
       {params.notice === "disconnect-failed" && (
-        <p role="alert" className="text-sm text-red-800">
+        <p role="alert" className="text-sm text-red-300">
           Die Verbindung konnte nicht getrennt werden. Bitte versuche es erneut.
         </p>
       )}
       {!configured && (
-        <p role="alert" className="rounded-lg border bg-amber-50 p-4 text-sm">
+        <p role="alert" className="bg-warning/10 rounded-lg border p-4 text-sm">
           Die Google-Verbindung ist noch nicht konfiguriert. Client-ID,
           Client-Secret, AUTH_SECRET und Datenbankverbindung müssen serverseitig
           hinterlegt sein.
@@ -99,7 +99,7 @@ export default async function GoogleDriveSettings({
           <h2 className="text-xl font-semibold">
             {connected ? "Verbunden" : "Nicht verbunden"}
           </h2>
-          <span className="rounded-full bg-stone-100 px-3 py-1 text-xs">
+          <span className="bg-secondary rounded-full px-3 py-1 text-xs">
             {hasDriveWriteScope(connection?.googleAccount?.scope)
               ? "Eventordner anlegen freigegeben"
               : "Lesender Zugriff"}

@@ -107,7 +107,7 @@ export function TicketImport({ eventId }: { eventId: string }) {
           </div>
           <button
             disabled={pending}
-            className="rounded bg-stone-900 px-4 py-2 text-white"
+            className="bg-primary text-primary-foreground rounded px-4 py-2"
             onClick={() => submit(true)}
           >
             In dieses Event importieren

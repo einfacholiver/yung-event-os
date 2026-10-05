@@ -10,7 +10,7 @@ export function NewEventForm({ rootName }: { rootName: string }) {
   const folderName = `YUNG ${name.trim().replace(/^yung\s+/i, "")}`;
   return (
     <form
-      className="space-y-5 rounded-xl border bg-white p-6"
+      className="bg-card space-y-5 rounded-xl border p-6"
       onSubmit={async (e) => {
         e.preventDefault();
         setPending(true);
@@ -53,7 +53,7 @@ export function NewEventForm({ rootName }: { rootName: string }) {
         YUNG wird automatisch vorangestellt. Nach dem Anlegen kannst du Datum,
         Uhrzeiten und Ort im Overview ergänzen.
       </p>
-      <div className="rounded bg-stone-100 p-4">
+      <div className="bg-secondary rounded p-4">
         <p>
           {rootName} / <strong>{folderName}</strong>
         </p>
@@ -69,13 +69,13 @@ export function NewEventForm({ rootName }: { rootName: string }) {
       </p>
       <button
         disabled={pending}
-        className="rounded bg-stone-900 px-5 py-3 text-white"
+        className="bg-primary text-primary-foreground rounded px-5 py-3"
       >
         {pending
           ? "Event und Ordner werden angelegt …"
           : "Event und Drive-Ordner anlegen"}
       </button>
-      <p role="status" className="text-sm text-red-800">
+      <p role="status" className="text-sm text-red-300">
         {error}
       </p>
     </form>

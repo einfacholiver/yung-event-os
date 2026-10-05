@@ -4,7 +4,7 @@ export function MediaPreview({ src, name }: { src: string; name: string }) {
   const [failed, setFailed] = useState(false);
   if (failed)
     return (
-      <div className="mb-3 rounded bg-stone-100 p-8 text-sm">
+      <div className="bg-secondary mb-3 rounded p-8 text-sm">
         Vorschau nicht verfügbar. Original in Drive öffnen.
       </div>
     );

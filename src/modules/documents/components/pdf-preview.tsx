@@ -40,7 +40,7 @@ export function PdfPreview({ src, name }: { src: string; name: string }) {
   return (
     <div className="mt-3 space-y-3">
       <button
-        className="rounded border bg-white px-4 py-2 text-sm"
+        className="bg-card rounded border px-4 py-2 text-sm"
         aria-expanded={open}
         onClick={() => {
           setError("");
@@ -53,14 +53,14 @@ export function PdfPreview({ src, name }: { src: string; name: string }) {
       {open && (
         <div>
           {error ? (
-            <p role="alert" className="p-3 text-sm text-red-800">
+            <p role="alert" className="p-3 text-sm text-red-300">
               {error}
             </p>
           ) : url ? (
             <iframe
               src={url}
               title={`PDF-Vorschau: ${name}`}
-              className="h-[70vh] w-full rounded border bg-white"
+              className="bg-card h-[70vh] w-full rounded border"
             />
           ) : (
             <p role="status" className="p-3 text-sm">
