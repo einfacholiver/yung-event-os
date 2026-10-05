@@ -53,7 +53,7 @@ export async function getDocuments(eventId?: string) {
       name: true,
       folderMappings: {
         where: { organizationId: context.organizationId },
-        select: { eventId: true },
+        select: { eventId: true, purpose: true },
       },
     },
   });
@@ -101,7 +101,27 @@ export async function getDocuments(eventId?: string) {
     return parts.join(" / ");
   };
   const documents = items
-    .map((item) => ({ ...item, path: pathFor(item), event: eventFor(item) }))
+    .map((item) => {
+      const event = eventFor(item);
+      let category: string | undefined;
+      let current = item.parentExternalId;
+      const visited = new Set<string>();
+      while (current && !visited.has(current)) {
+        visited.add(current);
+        const folder = folders.find((entry) => entry.externalId === current);
+        if (!folder) break;
+        const mappings = folder.folderMappings.filter(
+          (mapping) => mapping.eventId === event?.id,
+        );
+        if (mappings.length) {
+          const purposes = new Set(mappings.map((mapping) => mapping.purpose));
+          if (purposes.size === 1) category = mappings[0].purpose;
+          break;
+        }
+        current = folder.parentExternalId;
+      }
+      return { ...item, path: pathFor(item), event, category };
+    })
     .filter((item) => !eventId || item.event?.id === eventId);
   return { events, documents, eventRoots };
 }

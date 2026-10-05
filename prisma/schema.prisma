@@ -83,6 +83,7 @@ model Organization {
 }
 
 model Event {
+  ticketOrders        TicketOrder[]
   id                  String               @id @default(cuid())
   organizationId      String
   name                String
@@ -106,6 +107,26 @@ model Event {
   @@unique([organizationId, id])
   @@unique([organizationId, slug])
   @@index([organizationId, status])
+}
+
+model TicketOrder {
+  id             String   @id @default(cuid())
+  organizationId String
+  eventId        String
+  orderNumber    String
+  paymentStatus  String
+  cancelled      Boolean
+  tickets        Int?
+  tables         Int?
+  lounges        Int?
+  total          Decimal  @db.Decimal(14, 2)
+  refunded       Decimal  @db.Decimal(14, 2)
+  currency       String   @db.VarChar(3)
+  updatedAt      DateTime @updatedAt
+  event          Event    @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([eventId, orderNumber])
+  @@index([organizationId, eventId])
 }
 
 model DriveConnection {

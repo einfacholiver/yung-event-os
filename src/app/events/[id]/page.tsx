@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getEvent } from "@/modules/events/server/queries";
 import { formatEventDate } from "@/modules/events/config";
+import { EventEdit } from "@/modules/events/components/event-edit";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
@@ -36,6 +37,13 @@ export default async function EventOverview({
         <p className="text-muted-foreground mt-2 text-sm">
           Die wichtigsten Informationen zu deinem Event.
         </p>
+        <EventEdit
+          event={{
+            ...event,
+            startsAt: event.startsAt?.toISOString() ?? null,
+            endsAt: event.endsAt?.toISOString() ?? null,
+          }}
+        />
         <dl className="mt-8 grid gap-8 sm:grid-cols-2">
           {details.map(([label, value]) => (
             <div key={label}>

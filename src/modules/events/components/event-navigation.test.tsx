@@ -3,20 +3,18 @@ import { expect, it, vi } from "vitest";
 import { EventNavigation } from "./event-navigation";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/events/event-1/invoices",
+  usePathname: () => "/events/event-1/documents",
 }));
 
-it("exposes all nine navigable sections with exactly one active link", () => {
+it("exposes focused event sections with exactly one active link", () => {
   render(<EventNavigation eventId="event-1" />);
   const links = screen.getAllByRole("link");
   expect(links.map((link) => link.textContent)).toEqual([
     "Overview",
-    "Finances",
-    "Invoices",
-    "Documents",
-    "Tasks",
+    "Finanzen",
+    "Dokumente",
     "Media",
-    "Permissions",
+    "Genehmigungen",
     "Tickets",
     "Analytics",
   ]);
@@ -24,7 +22,7 @@ it("exposes all nine navigable sections with exactly one active link", () => {
     "href",
     "/events/event-1",
   );
-  expect(screen.getByRole("link", { name: "Invoices" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Dokumente" })).toHaveAttribute(
     "aria-current",
     "page",
   );

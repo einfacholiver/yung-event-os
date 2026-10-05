@@ -1,32 +1,148 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { eventTabs } from "@/modules/events/config";
-
+import { requireEvent } from "@/modules/events/server/workspace";
+import { getDocuments } from "@/modules/documents/server/queries";
+import { EventFinances } from "@/modules/events/components/event-finances";
+import { EventTickets } from "@/modules/tickets/components/event-tickets";
+import { getDriveConnection } from "@/modules/drive/server/context";
+import { hasDriveContentScope } from "@/modules/drive/config";
+import { enableDrivePreviews } from "@/modules/drive/actions";
+import { MediaPreview } from "@/modules/events/components/media-preview";
+import { PdfPreview } from "@/modules/documents/components/pdf-preview";
 export const dynamic = "force-dynamic";
 export default async function EventSection({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; tab: string }>;
+  searchParams: Promise<{ category?: string }>;
 }) {
-  const { tab: slug } = await params;
+  const { id, tab: slug } = await params;
+  if (slug === "invoices") redirect(`/events/${id}/documents`);
   const tab = eventTabs.find(
     (item) => item.slug === slug && item.slug !== "overview",
   );
   if (!tab) notFound();
+  const { user } = await requireEvent(id);
+  if (slug === "tickets")
+    return <EventTickets id={id} organizationId={user.organizationId} />;
+  if (slug === "finances" || slug === "analytics")
+    return (
+      <EventFinances
+        id={id}
+        organizationId={user.organizationId}
+        analytics={slug === "analytics"}
+      />
+    );
+  const { documents } = await getDocuments(id);
+  const previewEnabled = hasDriveContentScope(
+    (await getDriveConnection()).account.scope,
+  );
+  const category = (await searchParams).category;
+  const filtered = documents.filter((file) =>
+    slug === "permissions"
+      ? file.category === "PERMISSIONS"
+      : slug === "media"
+        ? file.category === "MEDIA"
+        : category === "INCOME" || category === "EXPENSES"
+          ? file.category === category
+          : true,
+  );
   return (
-    <section
-      className="bg-card rounded-xl border border-dashed px-6 py-14 text-center"
-      aria-labelledby="section-heading"
-    >
-      <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
-        In Vorbereitung
-      </span>
-      <h2 id="section-heading" className="mt-5 text-2xl font-semibold">
-        {tab.label}
-      </h2>
-      <p className="text-muted-foreground mx-auto mt-3 max-w-md text-sm leading-6">
-        Dieser Bereich wird in einem nächsten Schritt umgesetzt. Hier stehen
-        noch keine Funktionen zur Verfügung.
+    <section className="space-y-5">
+      <h2 className="text-2xl font-semibold">{tab.label}</h2>
+      <p className="text-sm text-stone-600">
+        Gespeicherter Drive-Stand für dieses Event. Neue Dateien erscheinen nach
+        „Drive synchronisieren“ in den Einstellungen.
       </p>
+      {slug === "documents" && (
+        <nav aria-label="Dokumentarten" className="flex flex-wrap gap-3">
+          {[
+            ["", "Alle Dokumente"],
+            ["INCOME", "Einnahmerechnungen"],
+            ["EXPENSES", "Ausgabenrechnungen"],
+          ].map(([value, label]) => (
+            <Link
+              key={value}
+              aria-current={(category ?? "") === value ? "page" : undefined}
+              className={`rounded border px-4 py-2 ${(category ?? "") === value ? "bg-stone-900 text-white" : ""}`}
+              href={`/events/${id}/documents${value ? `?category=${value}` : ""}`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+      )}
+      {!previewEnabled && (
+        <form action={enableDrivePreviews} className="space-y-3">
+          <p>
+            Für Bild- und PDF-Vorschauen benötigt die App eine zusätzliche
+            Google-Freigabe zum Lesen von Dateiinhalten. Es werden keine
+            Drive-Dateien verändert.
+          </p>
+          <button className="rounded border px-4 py-2">
+            Dokumentvorschauen freigeben
+          </button>
+        </form>
+      )}
+      <div
+        className={
+          slug === "media"
+            ? "grid gap-4 sm:grid-cols-3"
+            : "divide-y rounded-xl border"
+        }
+      >
+        {filtered.map((file) => (
+          <div
+            className="block rounded-lg p-4 hover:bg-stone-100"
+            key={file.id}
+          >
+            {slug === "media" &&
+              previewEnabled &&
+              file.mimeType.startsWith("image/") && (
+                <MediaPreview
+                  src={`/api/events/${id}/media/${file.id}`}
+                  name={file.name}
+                />
+              )}
+            <a
+              className="font-medium hover:underline"
+              href={`https://drive.google.com/file/d/${encodeURIComponent(file.externalId)}/view`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {file.name} ↗
+            </a>
+            <p className="mt-1 text-xs break-all text-stone-500">{file.path}</p>
+            <p className="mt-2 text-xs">
+              {file.mimeType.startsWith("image/")
+                ? "Bild"
+                : file.mimeType === "application/vnd.google-apps.spreadsheet"
+                  ? "Google Sheets"
+                  : file.mimeType}
+            </p>
+            {previewEnabled && file.mimeType === "application/pdf" && (
+              <PdfPreview
+                src={`/api/events/${id}/documents/${file.id}/preview`}
+                name={file.name}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      {!filtered.length && (
+        <p className="rounded-xl border border-dashed p-8">
+          Noch keine Dateien in diesem Bereich. Prüfe die Ordnerzuordnung und
+          synchronisiere Drive.
+        </p>
+      )}
+      <Link
+        className="text-sm underline"
+        href="/settings/integrations/google-drive/mapping"
+      >
+        Drive-Zuordnung prüfen
+      </Link>
     </section>
   );
 }

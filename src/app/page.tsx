@@ -21,8 +21,8 @@ export default function Home() {
           </Link>
         </Button>
         <p className="text-muted-foreground text-sm">
-          Alle verfügbaren Bereiche erreichst du über die Navigation oben.
-          Sheets-Import, Ticketdaten und AI sind noch nicht verfügbar.
+          Öffne ein Event für seine Dokumente, Finanzen, Medien und Tickets. Das
+          Check-in System wird später angebunden.
         </p>
       </section>
     </main>

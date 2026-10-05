@@ -1,6 +1,6 @@
 # Project instructions
 
-- Keep infrastructure separate from business features. User-authorized scope now includes Drive sync/mapping, documents, finances, invoices, tasks, analytics and future Sheets/ticket/AI integrations. Implement and validate each phase; never describe a scaffold as a finished integration. One.com remains out of scope.
+- Keep infrastructure separate from business features. Current user-authorized scope is event-centric: editable event details and finances, mapped Drive documents by income/expense, media and permits, PDF previews, creation of new events with their Drive folder structure, One.com CSV orders and basic finance analytics. Check-in is a placeholder. Tasks and AI are not in current focus. Preserve existing records and mappings; never describe a scaffold as a finished integration.
 - For all future Google Drive operations in this project, use only lightsignal.dj@gmail.com. Verify the connected identity before accessing Drive. If it cannot be verified, do not access Drive.
 - Run npm run lint, npm run typecheck, npm run test, and npm run build after relevant changes.
 

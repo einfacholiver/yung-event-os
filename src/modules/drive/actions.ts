@@ -2,12 +2,43 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/server/auth";
-import { DRIVE_SETTINGS_PATH } from "./config";
+import {
+  DRIVE_SETTINGS_PATH,
+  DRIVE_CONTENT_SCOPE,
+  DRIVE_METADATA_SCOPE,
+  DRIVE_WRITE_SCOPE,
+} from "./config";
+import { requireDriveUser } from "./server/context";
 import { driveErrorMessage } from "./errors";
 import { saveDriveFolder, disconnectDrive, syncDrive } from "./server/service";
 
 export async function connectGoogleDrive() {
   await signIn("google", { redirectTo: DRIVE_SETTINGS_PATH });
+}
+export async function enableEventFolderCreation() {
+  await requireDriveUser();
+  await signIn(
+    "google",
+    { redirectTo: "/events/new" },
+    {
+      scope: `openid email profile ${DRIVE_WRITE_SCOPE}`,
+      prompt: "consent select_account",
+      access_type: "offline",
+    },
+  );
+}
+
+export async function enableDrivePreviews() {
+  await requireDriveUser();
+  await signIn(
+    "google",
+    { redirectTo: "/events" },
+    {
+      scope: `openid email profile ${DRIVE_METADATA_SCOPE} ${DRIVE_CONTENT_SCOPE}`,
+      prompt: "consent",
+      access_type: "offline",
+    },
+  );
 }
 
 export async function logoutGoogleDrive() {

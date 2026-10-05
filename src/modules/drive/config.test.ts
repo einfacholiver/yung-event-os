@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   DRIVE_ACCOUNT_EMAIL,
   DRIVE_METADATA_SCOPE,
+  DRIVE_WRITE_SCOPE,
+  DRIVE_CONTENT_SCOPE,
+  hasDriveWriteScope,
+  hasDriveContentScope,
   hasDriveScope,
   isAllowedGoogleIdentity,
 } from "./config";
@@ -29,5 +33,10 @@ describe("Google identity policy", () => {
     expect(hasDriveScope(`openid email ${DRIVE_METADATA_SCOPE}`)).toBe(true);
     expect(hasDriveScope("openid email profile")).toBe(false);
     expect(hasDriveScope(`${DRIVE_METADATA_SCOPE}.fake`)).toBe(false);
+    expect(hasDriveScope(DRIVE_WRITE_SCOPE)).toBe(true);
+    expect(hasDriveContentScope(DRIVE_WRITE_SCOPE)).toBe(true);
+    expect(hasDriveContentScope(DRIVE_CONTENT_SCOPE)).toBe(true);
+    expect(hasDriveWriteScope(DRIVE_CONTENT_SCOPE)).toBe(false);
+    expect(hasDriveWriteScope(DRIVE_WRITE_SCOPE)).toBe(true);
   });
 });

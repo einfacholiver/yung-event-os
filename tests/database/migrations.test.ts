@@ -29,6 +29,14 @@ beforeAll(async () => {
       "utf8",
     ),
   );
+  for (const name of [
+    "20261004030000_drive_mapping_categories",
+    "20261004040000_ticket_orders",
+  ]) {
+    await db.exec(
+      readFileSync(`prisma/migrations/${name}/migration.sql`, "utf8"),
+    );
+  }
   await db.exec(`
     INSERT INTO "Organization" (id, name, slug) VALUES ('org-a', 'A', 'a'), ('org-b', 'B', 'b');
     INSERT INTO "User" (id, email, "organizationId") VALUES ('user-a', 'a@example.test', 'org-a'), ('user-b', 'b@example.test', 'org-b');
@@ -67,7 +75,7 @@ describe("core model SQL migration", () => {
     expect(result.rows[0].createdAt).toBeTruthy();
   });
 
-  it("creates exactly eleven core and three auth tables", async () => {
+  it("preserves core/auth tables and adds ticket orders", async () => {
     const result = await db.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
     );
@@ -87,6 +95,7 @@ describe("core model SQL migration", () => {
         "Account",
         "Session",
         "VerificationToken",
+        "TicketOrder",
       ].sort(),
     );
   });

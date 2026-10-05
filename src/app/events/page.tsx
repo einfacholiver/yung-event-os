@@ -1,5 +1,6 @@
 import { getEvents } from "@/modules/events/server/queries";
 import { EventList } from "@/modules/events/components/event-list";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export default async function EventsPage() {
@@ -15,6 +16,12 @@ export default async function EventsPage() {
           Alle Kapitel an einem Ort. Wähle ein Event, um die Details zu öffnen.
         </p>
       </div>
+      <Link
+        href="/events/new"
+        className="inline-block rounded bg-stone-900 px-5 py-3 text-white"
+      >
+        Neues Event
+      </Link>
       <EventList events={events} />
     </div>
   );

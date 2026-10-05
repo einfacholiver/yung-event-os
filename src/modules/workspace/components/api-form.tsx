@@ -5,10 +5,14 @@ export function ApiForm({
   children,
   endpoint,
   className,
+  method = "POST",
+  reset = true,
 }: {
   children: React.ReactNode;
   endpoint: string;
   className?: string;
+  method?: "POST" | "PATCH";
+  reset?: boolean;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
@@ -23,13 +27,13 @@ export function ApiForm({
         setSaving(true);
         setMessage("");
         try {
-          const response = await fetch(endpoint, { method: "POST", body });
+          const response = await fetch(endpoint, { method, body });
           const result = await response.json();
           if (!response.ok) {
             setMessage(result.error ?? "Speichern fehlgeschlagen.");
             return;
           }
-          form.reset();
+          if (reset) form.reset();
           setMessage("Gespeichert");
           router.refresh();
         } catch {

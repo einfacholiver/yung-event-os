@@ -1,11 +1,9 @@
 export const eventTabs = [
   { slug: "overview", label: "Overview" },
-  { slug: "finances", label: "Finances" },
-  { slug: "invoices", label: "Invoices" },
-  { slug: "documents", label: "Documents" },
-  { slug: "tasks", label: "Tasks" },
+  { slug: "finances", label: "Finanzen" },
+  { slug: "documents", label: "Dokumente" },
   { slug: "media", label: "Media" },
-  { slug: "permissions", label: "Permissions" },
+  { slug: "permissions", label: "Genehmigungen" },
   { slug: "tickets", label: "Tickets" },
   { slug: "analytics", label: "Analytics" },
 ] as const;

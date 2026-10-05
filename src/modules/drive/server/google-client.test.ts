@@ -27,6 +27,92 @@ function requestWith(...bodies: unknown[]) {
 }
 
 describe("verified Drive browser", () => {
+  it("creates only the requested folder with a stable ID and explicit parent", async () => {
+    const created = {
+      id: "new-folder-id",
+      name: "YUNG Chapter Five",
+      mimeType: DRIVE_FOLDER_MIME,
+      parents: ["events-root"],
+    };
+    const request = requestWith(identity, created);
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    expect(
+      await client.createFolder(created.id, "events-root", created.name),
+    ).toEqual(created);
+    const init = request.mock.calls[1][1];
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(String(init?.body))).toEqual(created);
+    expect(String(request.mock.calls[0][0])).toContain("/userinfo");
+  });
+  it("reuses a known ID after a timeout and refuses a conflicting parent", async () => {
+    const folder = {
+      id: "new-folder-id",
+      name: "YUNG Chapter Five",
+      mimeType: DRIVE_FOLDER_MIME,
+      parents: ["events-root"],
+    };
+    const request = requestWith(identity);
+    request.mockResolvedValueOnce(new Response(null, { status: 409 }));
+    request.mockResolvedValueOnce(Response.json(folder));
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    expect(
+      await client.createFolder(folder.id, "events-root", folder.name),
+    ).toEqual(folder);
+    request.mockResolvedValueOnce(new Response(null, { status: 409 }));
+    request.mockResolvedValueOnce(
+      Response.json({ ...folder, parents: ["another-root"] }),
+    );
+    await expect(
+      client.createFolder(folder.id, "events-root", folder.name),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+  it("reads a PDF only after identity verification and matching MIME metadata", async () => {
+    const request = requestWith(identity, {
+      id: "invoice-id",
+      name: "invoice.pdf",
+      mimeType: "application/pdf",
+    });
+    request.mockResolvedValueOnce(
+      new Response("%PDF-1.7\nexample", {
+        headers: { "content-type": "application/pdf" },
+      }),
+    );
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    const pdf = await client.pdf("invoice-id");
+    expect(pdf.type).toBe("application/pdf");
+    expect(new TextDecoder().decode(pdf.bytes)).toContain("%PDF-");
+    expect(String(request.mock.calls[0][0])).toContain("/userinfo");
+    expect(String(request.mock.calls[2][0])).toContain("alt=media");
+  });
+  it("rejects non-PDF metadata before reading contents", async () => {
+    const request = requestWith(identity, {
+      id: "invoice-id",
+      name: "wrong.html",
+      mimeType: "text/html",
+    });
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    await expect(client.pdf("invoice-id")).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+  it.each(["not a PDF", "%PDF-1.7".padEnd(20_000_001, "x")])(
+    "rejects malformed or oversized PDF contents",
+    async (body) => {
+      const request = requestWith(identity, {
+        id: "invoice-id",
+        name: "invoice.pdf",
+        mimeType: "application/pdf",
+      });
+      request.mockResolvedValueOnce(
+        new Response(body, { headers: { "content-type": "application/pdf" } }),
+      );
+      const client = await verifiedDriveClient("token", identity.sub, request);
+      await expect(client.pdf("invoice-id")).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+      });
+    },
+  );
   it.each([
     { ...identity, email: "other@gmail.com" },
     { ...identity, email_verified: false },

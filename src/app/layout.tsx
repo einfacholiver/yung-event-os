@@ -18,13 +18,8 @@ export default function RootLayout({
           className="flex flex-wrap gap-4 border-b bg-stone-100 px-6 py-3 text-sm"
         >
           {[
-            ["/", "Start"],
             ["/events", "Events"],
-            ["/documents", "Documents"],
-            ["/finances", "Finanzen"],
-            ["/invoices", "Rechnungen"],
-            ["/tasks", "Tasks"],
-            ["/analytics", "Analytics"],
+            ["/check-in", "Check-in System"],
             ["/settings/integrations/google-drive", "Google Drive"],
           ].map(([href, label]) => (
             <Link key={href} href={href} className="hover:underline">

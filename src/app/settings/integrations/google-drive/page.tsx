@@ -2,7 +2,10 @@ import Link from "next/link";
 import { auth } from "@/server/auth";
 import { googleEnvSchema } from "@/config/env";
 import { Button } from "@/components/ui/button";
-import { DRIVE_ACCOUNT_EMAIL } from "@/modules/drive/config";
+import {
+  DRIVE_ACCOUNT_EMAIL,
+  hasDriveWriteScope,
+} from "@/modules/drive/config";
 import {
   connectGoogleDrive,
   disconnectGoogleDrive,
@@ -41,6 +44,7 @@ export default async function GoogleDriveSettings({
           rootFolderId: true,
           rootFolderName: true,
           lastSyncedAt: true,
+          googleAccount: { select: { scope: true } },
         },
       });
     } catch {
@@ -96,16 +100,20 @@ export default async function GoogleDriveSettings({
             {connected ? "Verbunden" : "Nicht verbunden"}
           </h2>
           <span className="rounded-full bg-stone-100 px-3 py-1 text-xs">
-            Nur Metadaten lesen
+            {hasDriveWriteScope(connection?.googleAccount?.scope)
+              ? "Eventordner anlegen freigegeben"
+              : "Lesender Zugriff"}
           </span>
         </div>
         <p className="text-sm">
           Erlaubtes Konto: <strong>{DRIVE_ACCOUNT_EMAIL}</strong>
         </p>
         <p className="text-muted-foreground text-sm">
-          Die Freigabe erlaubt das Lesen von Namen und Ordnerstrukturen in
-          deinem Drive. Die App ändert keine Dateien und startet keinen
-          automatischen Sync.
+          Die App liest Namen und Ordnerstrukturen. Für die optionale
+          Bildergalerie kannst du zusätzlich Dateiinhalte freigeben. Die App Bei
+          „Neues Event“ kannst du das Anlegen einer neuen Ordnerstruktur separat
+          freigeben. Vorhandene Unterlagen werden nicht verändert.
+          Synchronisierungen startest du manuell.
         </p>
         <div className="flex flex-wrap gap-3">
           <form action={connectGoogleDrive}>
