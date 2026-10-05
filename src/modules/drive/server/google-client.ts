@@ -62,7 +62,7 @@ export async function verifiedDriveClient(
     );
     url.searchParams.set(
       "fields",
-      "id,name,mimeType,parents,trashed,modifiedTime",
+      "id,name,mimeType,parents,trashed,modifiedTime,md5Checksum",
     );
     const result = driveFileSchema.safeParse(
       await googleJson(url, token, request),
@@ -153,6 +153,142 @@ export async function verifiedDriveClient(
 
   return {
     folderPath,
+    async generateFileId() {
+      const result = z
+        .object({ ids: z.array(folderIdSchema).length(1) })
+        .safeParse(
+          await googleJson(
+            "https://www.googleapis.com/drive/v3/files/generateIds?count=1&space=drive&type=files",
+            token,
+            request,
+          ),
+        );
+      if (!result.success) throw new DriveError("UNAVAILABLE", 503);
+      return result.data.ids[0];
+    },
+    async uploadFile(input: {
+      id: string;
+      parentId: string;
+      name: string;
+      mimeType: string;
+      bytes: Uint8Array<ArrayBuffer>;
+      md5Checksum: string;
+    }) {
+      folderIdSchema.parse(input.id);
+      folderIdSchema.parse(input.parentId);
+      if (
+        !input.name.trim() ||
+        input.name.length > 200 ||
+        !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(input.mimeType) ||
+        input.bytes.length > 100_000_000
+      )
+        throw new DriveError("INVALID_INPUT", 400);
+      const boundary = `yung_${crypto.randomUUID()}`;
+      const metadata = {
+        id: input.id,
+        name: input.name,
+        mimeType: input.mimeType,
+        parents: [input.parentId],
+      };
+      const body = new Blob([
+        `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${input.mimeType}\r\n\r\n`,
+        input.bytes,
+        `\r\n--${boundary}--\r\n`,
+      ]);
+      let response: Response;
+      try {
+        if (input.bytes.length > 5_000_000) {
+          response = await request(
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,parents,modifiedTime,md5Checksum",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json; charset=UTF-8",
+                "X-Upload-Content-Type": input.mimeType,
+                "X-Upload-Content-Length": String(input.bytes.length),
+              },
+              body: JSON.stringify(metadata),
+              cache: "no-store",
+              redirect: "error",
+              signal: AbortSignal.timeout(15_000),
+            },
+          );
+          if (response.ok) {
+            const location = response.headers.get("location");
+            if (!location) throw new DriveError("UNAVAILABLE", 503);
+            const url = new URL(location);
+            if (
+              url.protocol !== "https:" ||
+              url.hostname !== "www.googleapis.com" ||
+              url.username ||
+              url.password ||
+              !url.pathname.startsWith("/upload/drive/v3/files")
+            )
+              throw new DriveError("UNAVAILABLE", 503);
+            response = await request(url, {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": input.mimeType,
+              },
+              body: new Blob([input.bytes]),
+              cache: "no-store",
+              redirect: "error",
+              signal: AbortSignal.timeout(120_000),
+            });
+          }
+        } else {
+          response = await request(
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,parents,modifiedTime,md5Checksum",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": `multipart/related; boundary=${boundary}`,
+              },
+              body,
+              cache: "no-store",
+              redirect: "error",
+              signal: AbortSignal.timeout(60_000),
+            },
+          );
+        }
+      } catch {
+        throw new DriveError("UNAVAILABLE", 503);
+      }
+      if (!response.ok && response.status !== 409)
+        throw new DriveError(
+          response.status === 401
+            ? "RECONNECT"
+            : response.status === 403
+              ? "FORBIDDEN"
+              : response.status === 429
+                ? "RATE_LIMIT"
+                : "UNAVAILABLE",
+          response.status === 401
+            ? 401
+            : response.status === 403
+              ? 403
+              : response.status === 429
+                ? 429
+                : 503,
+        );
+      const file =
+        response.status === 409
+          ? await getFile(input.id)
+          : driveFileSchema.parse(await response.json());
+      if (
+        file.id !== input.id ||
+        file.name !== input.name ||
+        file.mimeType !== input.mimeType ||
+        file.parents?.[0] !== input.parentId ||
+        file.md5Checksum !== input.md5Checksum ||
+        file.trashed
+      )
+        throw new DriveError("FORBIDDEN", 403);
+      return file;
+    },
     async generateFolderIds() {
       const result = z
         .object({ ids: z.array(folderIdSchema).length(5) })

@@ -21,6 +21,14 @@ PDF-Rechnungen und Genehmigungen lassen sich mit „PDF-Vorschau öffnen“ dire
 - Einlass, verifizierte Besucherzahlen und durchschnittliche Ticketpreise aus gemischten Warenkörben sind noch nicht umgesetzt.
 - Es gibt keine automatische Rechnungsanalyse und keine AI. Neue Eventordner werden nur nach zusätzlicher Google-Freigabe und ausdrücklichem Anlegen des Events erstellt.
 
+## Dateien direkt in Drive hochladen
+
+Dokumente → Einnahmerechnungen und Ausgabenrechnungen, Media sowie Genehmigungen bieten Datei-Uploads in den jeweiligen gemappten Ordner. In „Alle Dokumente“ wird die Ablage ausgewählt; in den einzelnen Bereichen ist die passende Kategorie vorgegeben. Der vollständige gespeicherte Zielpfad ist sichtbar. Fehlende oder widersprüchliche Ordnerzuordnungen verhindern Uploads. Zunächst gegebenenfalls „Datei-Upload über Google freigeben“ wählen und ausschließlich lightsignal.dj@gmail.com verwenden. Die Freigabe nutzt denselben Google-Drive-Schreibscope wie das Anlegen neuer Eventordner.
+
+Dokumente und Genehmigungen unterstützen PDF, JPG, PNG, WebP, Word, Excel, CSV und Text bis 20 MB pro Datei. Media erlaubt Bilder und Videos bis 100 MB, darunter JPG, PNG, WebP, GIF, AVIF, HEIC, TIFF, MP4, MOV, WebM und MKV. Der Upload legt eine neue Originaldatei an und überschreibt keine vorhandene Datei. Metadaten werden sofort gespeichert; Finanzbuchungen entstehen dabei nicht. Dateien über 5 MB nutzen Googles Upload-Session. Bei einem Fehler den angebotenen Wiederholungsbutton in derselben Ansicht nutzen: eine reservierte Google-Datei-ID und Inhaltsprüfsummen verhindern eine zweite Datei für denselben Uploadversuch. Neue, separat gestartete Uploads können gleichnamige Dateien anlegen.
+
+Vor jeder Google-Operation wird die aktuelle Identität geprüft. Das Ziel muss innerhalb von Veranstaltungen und dem zugewiesenen Eventpfad liegen; Zuordnungen zu fremden Events werden abgewiesen. Tests simulieren Google-Antworten und prüfen zusätzlich Verbindungsfehler und fehlende Schreibrechte. Ein echter Upload mit der vom Nutzer gewährten Google-Schreibfreigabe ist anschließend in der Anwendung zu testen. Die bisherigen Grenzen der Bild- und PDF-Vorschauen bleiben bestehen; größere Dateien und Videos lassen sich über den Drive-Link öffnen.
+
 ## Neue Events mit Drive-Struktur
 
 Unter Events → Neues Event kann ein Event wie Chapter Five angelegt werden. Der Eventname und der Drive-Ordner heißen einheitlich YUNG Chapter Five. Darunter erstellt die App Ausgaben, Einnahmen, Genehmigungen und MEDIA und speichert ROOT und die vier Kategorie-Mappings. Datum und Ort lassen sich anschließend im Overview ergänzen.

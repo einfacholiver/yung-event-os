@@ -6,8 +6,16 @@ import { getDocuments } from "@/modules/documents/server/queries";
 import { EventFinances } from "@/modules/events/components/event-finances";
 import { EventTickets } from "@/modules/tickets/components/event-tickets";
 import { getDriveConnection } from "@/modules/drive/server/context";
-import { hasDriveContentScope } from "@/modules/drive/config";
-import { enableDrivePreviews } from "@/modules/drive/actions";
+import {
+  hasDriveContentScope,
+  hasDriveWriteScope,
+} from "@/modules/drive/config";
+import {
+  enableDrivePreviews,
+  enableDocumentUploads,
+} from "@/modules/drive/actions";
+import { getDb } from "@/server/db/client";
+import { DocumentUpload } from "@/modules/documents/components/document-upload";
 import { MediaPreview } from "@/modules/events/components/media-preview";
 import { PdfPreview } from "@/modules/documents/components/pdf-preview";
 export const dynamic = "force-dynamic";
@@ -36,10 +44,69 @@ export default async function EventSection({
       />
     );
   const { documents } = await getDocuments(id);
-  const previewEnabled = hasDriveContentScope(
-    (await getDriveConnection()).account.scope,
-  );
+  const driveContext = await getDriveConnection();
+  const previewEnabled = hasDriveContentScope(driveContext.account.scope);
   const { category, mediaType: requestedMediaType } = await searchParams;
+  const uploadSection =
+    slug === "documents" || slug === "media" || slug === "permissions"
+      ? slug
+      : null;
+  const uploadPurposes: ("INCOME" | "EXPENSES" | "MEDIA" | "PERMISSIONS")[] =
+    slug === "media"
+      ? ["MEDIA"]
+      : slug === "permissions"
+        ? ["PERMISSIONS"]
+        : category === "INCOME" || category === "EXPENSES"
+          ? [category]
+          : ["INCOME", "EXPENSES"];
+  const uploadMappings = uploadSection
+    ? await getDb().driveFolderMapping.findMany({
+        where: {
+          eventId: id,
+          organizationId: user.organizationId,
+          purpose: { in: uploadPurposes },
+          driveItem: {
+            connectionId: driveContext.connection.id,
+            trashed: false,
+          },
+        },
+        include: { driveItem: { select: { name: true, externalId: true } } },
+        orderBy: { purpose: "asc" },
+      })
+    : [];
+  const cachedFolders = uploadMappings.length
+    ? await getDb().driveItem.findMany({
+        where: {
+          organizationId: user.organizationId,
+          connectionId: driveContext.connection.id,
+          kind: "FOLDER",
+          trashed: false,
+        },
+        select: { externalId: true, parentExternalId: true, name: true },
+      })
+    : [];
+  const foldersById = new Map(
+    cachedFolders.map((folder) => [folder.externalId, folder]),
+  );
+  const uploadTargetName = (folderId: string, fallback: string) => {
+    const parts: string[] = [];
+    const visited = new Set<string>();
+    let current: string | null = folderId;
+    while (
+      current &&
+      current !== driveContext.connection.rootFolderId &&
+      !visited.has(current)
+    ) {
+      visited.add(current);
+      const folder = foldersById.get(current);
+      if (!folder) break;
+      parts.unshift(folder.name);
+      current = folder.parentExternalId;
+    }
+    if (!parts.length) parts.push(fallback);
+    parts.unshift(driveContext.connection.rootFolderName ?? "Veranstaltungen");
+    return parts.join(" / ");
+  };
   const mediaType =
     requestedMediaType === "images" || requestedMediaType === "videos"
       ? requestedMediaType
@@ -62,8 +129,9 @@ export default async function EventSection({
     <section className="space-y-5">
       <h2 className="text-2xl font-semibold">{tab.label}</h2>
       <p className="text-sm text-stone-600">
-        Gespeicherter Drive-Stand für dieses Event. Neue Dateien erscheinen nach
-        „Drive synchronisieren“ in den Einstellungen.
+        Gespeicherter Drive-Stand für dieses Event. Extern hinzugefügte Dateien
+        erscheinen nach „Drive synchronisieren“ in den Einstellungen; hier
+        hochgeladene Dateien erscheinen direkt.
       </p>
       {slug === "documents" && (
         <nav aria-label="Dokumentarten" className="flex flex-wrap gap-3">
@@ -83,6 +151,45 @@ export default async function EventSection({
           ))}
         </nav>
       )}
+      {uploadSection &&
+        (!uploadMappings.length ? (
+          <p className="rounded-xl border p-5">
+            Für Uploads bitte zuerst den Zielordner dieses Bereichs über
+            „Drive-Zuordnung prüfen“ zuweisen.
+          </p>
+        ) : !hasDriveWriteScope(driveContext.account.scope) ? (
+          <form
+            action={enableDocumentUploads.bind(null, id, uploadSection)}
+            className="space-y-3 rounded-xl border p-5"
+          >
+            <p>
+              Zum Hochladen in eure bestehenden Event-Ordner ist
+              Google-Schreibzugriff erforderlich. Verwende
+              lightsignal.dj@gmail.com. Die App legt neue Dateien ausschließlich
+              im zugewiesenen Ordner des aktuellen Event-Bereichs ab.
+            </p>
+            <button className="rounded border px-4 py-2">
+              Datei-Upload über Google freigeben
+            </button>
+          </form>
+        ) : (
+          <DocumentUpload
+            key={`${uploadSection}:${category ?? "all"}`}
+            eventId={id}
+            initialPurpose={
+              uploadMappings.some((mapping) => mapping.purpose === category)
+                ? category
+                : undefined
+            }
+            targets={uploadMappings.map((mapping) => ({
+              purpose: mapping.purpose,
+              name: uploadTargetName(
+                mapping.driveItem.externalId,
+                mapping.driveItem.name,
+              ),
+            }))}
+          />
+        ))}
       {slug === "media" && (
         <nav aria-label="Medienart filtern" className="flex flex-wrap gap-3">
           {[

@@ -16,6 +16,7 @@ export const driveFileSchema = z.object({
   parents: z.array(folderIdSchema).optional(),
   trashed: z.boolean().optional(),
   modifiedTime: z.string().optional(),
+  md5Checksum: z.string().optional(),
 });
 export const driveListSchema = z.object({
   files: z.array(driveFileSchema).default([]),

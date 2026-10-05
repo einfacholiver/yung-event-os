@@ -28,6 +28,25 @@ export async function enableEventFolderCreation() {
   );
 }
 
+export async function enableDocumentUploads(
+  eventId: string,
+  section: "documents" | "media" | "permissions" = "documents",
+) {
+  const { requireEvent } = await import("@/modules/events/server/workspace");
+  await requireEvent(eventId);
+  if (!["documents", "media", "permissions"].includes(section))
+    throw new Error("Invalid upload section");
+  await signIn(
+    "google",
+    { redirectTo: `/events/${encodeURIComponent(eventId)}/${section}` },
+    {
+      scope: `openid email profile ${DRIVE_WRITE_SCOPE}`,
+      prompt: "consent select_account",
+      access_type: "offline",
+    },
+  );
+}
+
 export async function enableDrivePreviews() {
   await requireDriveUser();
   await signIn(

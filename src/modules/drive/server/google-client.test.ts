@@ -27,6 +27,109 @@ function requestWith(...bodies: unknown[]) {
 }
 
 describe("verified Drive browser", () => {
+  it("uses Google's upload session for files over 5 MB and refuses a foreign session URL", async () => {
+    const uploaded = {
+      id: "video-id",
+      name: "clip.mp4",
+      mimeType: "video/mp4",
+      parents: ["media"],
+      md5Checksum: "checksum",
+    };
+    const request = requestWith(identity);
+    request
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 200,
+          headers: {
+            location:
+              "https://www.googleapis.com/upload/drive/v3/files?upload_id=session",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json(uploaded));
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    const input = {
+      id: "video-id",
+      parentId: "media",
+      name: "clip.mp4",
+      mimeType: "video/mp4",
+      bytes: new Uint8Array(5_000_001),
+      md5Checksum: "checksum",
+    };
+    expect(await client.uploadFile(input)).toEqual(uploaded);
+    expect(request.mock.calls[1][1]?.method).toBe("POST");
+    expect(String(request.mock.calls[1][0])).toContain("uploadType=resumable");
+    expect(request.mock.calls[2][1]?.method).toBe("PUT");
+    request.mockResolvedValueOnce(
+      new Response(null, {
+        status: 200,
+        headers: { location: "https://other.example/upload" },
+      }),
+    );
+    await expect(client.uploadFile(input)).rejects.toMatchObject({
+      code: "UNAVAILABLE",
+    });
+    expect(request).toHaveBeenCalledTimes(4);
+  });
+  it("uploads exact bytes under the requested parent and validates the returned checksum", async () => {
+    const uploaded = {
+      id: "file-id",
+      name: "invoice.pdf",
+      mimeType: "application/pdf",
+      parents: ["expenses"],
+      md5Checksum: "checksum",
+    };
+    const request = requestWith(identity, uploaded);
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    const bytes = new TextEncoder().encode("%PDF-test");
+    expect(
+      await client.uploadFile({
+        id: "file-id",
+        parentId: "expenses",
+        name: "invoice.pdf",
+        mimeType: "application/pdf",
+        bytes,
+        md5Checksum: "checksum",
+      }),
+    ).toEqual(uploaded);
+    const init = request.mock.calls[1][1];
+    expect(init?.method).toBe("POST");
+    expect(String(request.mock.calls[1][0])).toContain("uploadType=multipart");
+    const body = await (init!.body as Blob).text();
+    expect(body).toContain('"parents":["expenses"]');
+    expect(body).toContain("%PDF-test");
+  });
+  it("recovers an already created upload ID but refuses a different parent or content", async () => {
+    const request = requestWith(identity);
+    const uploaded = {
+      id: "file-id",
+      name: "invoice.pdf",
+      mimeType: "application/pdf",
+      parents: ["expenses"],
+      md5Checksum: "checksum",
+    };
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    const input = {
+      id: "file-id",
+      parentId: "expenses",
+      name: "invoice.pdf",
+      mimeType: "application/pdf",
+      bytes: new TextEncoder().encode("%PDF-test"),
+      md5Checksum: "checksum",
+    };
+    request
+      .mockResolvedValueOnce(new Response(null, { status: 409 }))
+      .mockResolvedValueOnce(Response.json(uploaded));
+    expect(await client.uploadFile(input)).toEqual(uploaded);
+    request
+      .mockResolvedValueOnce(new Response(null, { status: 409 }))
+      .mockResolvedValueOnce(
+        Response.json({ ...uploaded, md5Checksum: "different-content" }),
+      );
+    await expect(client.uploadFile(input)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
   it("creates only the requested folder with a stable ID and explicit parent", async () => {
     const created = {
       id: "new-folder-id",
