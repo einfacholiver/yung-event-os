@@ -4,6 +4,7 @@ import { cents, euro, financeTotals } from "@/modules/events/finance";
 import { ApiForm } from "@/modules/workspace/components/api-form";
 import { FinanceFields } from "./finance-fields";
 import { FinanceTable } from "./finance-table";
+import { getDocuments } from "@/modules/documents/server/queries";
 export async function EventFinances({
   id,
   organizationId,
@@ -16,7 +17,9 @@ export async function EventFinances({
   const transactions = await getDb().transaction.findMany({
     where: { eventId: id, organizationId },
     orderBy: [{ bookedAt: "desc" }, { id: "asc" }],
+    include: { invoice: { include: { driveItem: true } } },
   });
+  const { documents } = analytics ? { documents: [] } : await getDocuments(id);
   const rows = transactions.map((row) => ({
     id: row.id,
     direction: row.direction,
@@ -26,6 +29,16 @@ export async function EventFinances({
     paidBy: row.paidBy,
     amount: row.amount.toString(),
     bookedAt: row.bookedAt.toISOString().slice(0, 10),
+    invoiceDocument: row.invoice?.driveItem
+      ? {
+          id: row.invoice.driveItem.id,
+          name: row.invoice.driveItem.name,
+          externalId: row.invoice.driveItem.externalId,
+          mimeType: row.invoice.driveItem.mimeType,
+          trashed: row.invoice.driveItem.trashed,
+          path: row.invoice.driveItem.name,
+        }
+      : null,
   }));
   const totals = financeTotals(rows);
   const unpaid = rows
@@ -111,7 +124,18 @@ export async function EventFinances({
               <FinanceFields />
             </ApiForm>
           </div>
-          <FinanceTable rows={rows} />
+          <FinanceTable
+            rows={rows}
+            eventId={id}
+            documents={documents.map((file) => ({
+              id: file.id,
+              name: file.name,
+              path: file.path,
+              category: file.category,
+              mimeType: file.mimeType,
+              externalId: file.externalId,
+            }))}
+          />
           <Link className="underline" href={`/events/${id}/documents`}>
             Vorhandene Rechnungen und Kostenübersichten öffnen
           </Link>

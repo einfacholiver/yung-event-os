@@ -41,6 +41,33 @@ function descriptions() {
     .slice(1)
     .map((row) => within(row).getAllByRole("cell")[1].textContent);
 }
+it("shows linked invoice status, the complete document path and filters missing invoices", () => {
+  const document = {
+    id: "pdf",
+    name: "Technik.pdf",
+    path: "Veranstaltungen / Chapter Four / Ausgaben / Technik.pdf",
+    externalId: "drive-pdf",
+    mimeType: "application/pdf",
+    category: "EXPENSES",
+  };
+  render(
+    <FinanceTable
+      eventId="four"
+      rows={[{ ...rows[0], invoiceDocument: document }, rows[1]]}
+      documents={[document]}
+    />,
+  );
+  expect(screen.getByText("Rechnung hinterlegt")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Technik.pdf ↗" })).toHaveAttribute(
+    "href",
+    "https://drive.google.com/file/d/drive-pdf/view",
+  );
+  expect(screen.getAllByRole("option", { name: document.path }).length).toBe(2);
+  fireEvent.change(screen.getByRole("combobox", { name: /^Rechnung$/ }), {
+    target: { value: "missing" },
+  });
+  expect(descriptions()).toEqual(["Banner"]);
+});
 it("sorts numeric expenses and reverses the sort while keeping empty cells last", () => {
   render(<FinanceTable rows={rows} />);
   expect(descriptions()).toEqual(["Technik", "Banner", "Sponsoring"]);

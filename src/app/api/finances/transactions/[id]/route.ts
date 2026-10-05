@@ -22,13 +22,29 @@ export async function PATCH(
     const data = normalizePayment(
       schema.parse(Object.fromEntries(await request.formData())),
     );
-    const result = await getDb().transaction.updateMany({
+    const db = getDb();
+    const id = (await context.params).id;
+    const previous = await db.transaction.findFirst({
+      where: { id, organizationId: user.organizationId, currency: "EUR" },
+      select: { direction: true },
+    });
+    if (!previous)
+      return NextResponse.json(
+        { error: "Buchung nicht gefunden." },
+        { status: 404 },
+      );
+    const result = await db.transaction.updateMany({
       where: {
-        id: (await context.params).id,
+        id,
         organizationId: user.organizationId,
         currency: "EUR",
+        direction: previous.direction,
       },
-      data: { ...data, bookedAt: new Date(data.bookedAt) },
+      data: {
+        ...data,
+        bookedAt: new Date(data.bookedAt),
+        ...(previous.direction !== data.direction ? { invoiceId: null } : {}),
+      },
     });
     return NextResponse.json(
       result.count ? { success: true } : { error: "Buchung nicht gefunden." },

@@ -6,6 +6,10 @@ import { paymentSources } from "@/modules/finances/payment";
 import { ApiForm } from "@/modules/workspace/components/api-form";
 import { FinanceFields } from "./finance-fields";
 import { DeleteTransaction } from "./delete-transaction";
+import {
+  TransactionInvoice,
+  type InvoiceDocument,
+} from "./transaction-invoice";
 
 type Row = {
   id: string;
@@ -16,6 +20,7 @@ type Row = {
   direction: string;
   isPaid: boolean;
   paidBy: string | null;
+  invoiceDocument?: InvoiceDocument | null;
 };
 const columns = [
   ["bookedAt", "Datum"],
@@ -42,7 +47,15 @@ function sortValue(row: Row, key: SortKey): string | bigint | number | null {
   return row[key];
 }
 
-export function FinanceTable({ rows }: { rows: Row[] }) {
+export function FinanceTable({
+  rows,
+  eventId,
+  documents = [],
+}: {
+  rows: Row[];
+  eventId?: string;
+  documents?: InvoiceDocument[];
+}) {
   const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({
     key: "bookedAt",
     descending: true,
@@ -51,6 +64,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
   const [payment, setPayment] = useState("");
   const [payer, setPayer] = useState("");
   const [search, setSearch] = useState("");
+  const [invoiceFilter, setInvoiceFilter] = useState("");
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const payers = [
     ...new Set([
@@ -62,6 +76,9 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
     .filter(
       (row) =>
         !deletedIds.includes(row.id) &&
+        (!invoiceFilter ||
+          Boolean(row.invoiceDocument && !row.invoiceDocument.trashed) ===
+            (invoiceFilter === "linked")) &&
         (!direction || row.direction === direction) &&
         (!payment || row.isPaid === (payment === "paid")) &&
         (!payer ||
@@ -152,6 +169,18 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
             placeholder="z. B. Technik oder Sponsoring"
           />
         </label>
+        <label>
+          Rechnung
+          <select
+            className={style}
+            value={invoiceFilter}
+            onChange={(event) => setInvoiceFilter(event.target.value)}
+          >
+            <option value="">Alle Buchungen</option>
+            <option value="linked">Mit Rechnung</option>
+            <option value="missing">Ohne verfügbare Rechnung</option>
+          </select>
+        </label>
         <button
           type="button"
           className="justify-self-start rounded border px-3 py-2 text-sm"
@@ -160,6 +189,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
             setPayment("");
             setPayer("");
             setSearch("");
+            setInvoiceFilter("");
           }}
         >
           Filter zurücksetzen
@@ -214,6 +244,11 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
                   </button>
                 </th>
               ))}
+              {eventId && (
+                <th scope="col" className="p-3">
+                  Rechnung
+                </th>
+              )}
               <th scope="col" className="p-3">
                 Bearbeiten
               </th>
@@ -248,6 +283,17 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
                 <td className="p-3">
                   {row.isPaid ? (row.paidBy ?? "Nicht angegeben") : "—"}
                 </td>
+                {eventId && (
+                  <td className="p-3 align-top">
+                    <TransactionInvoice
+                      id={row.id}
+                      eventId={eventId}
+                      direction={row.direction}
+                      document={row.invoiceDocument}
+                      documents={documents}
+                    />
+                  </td>
+                )}
                 <td className="p-3">
                   {row.currency === "EUR" && (
                     <details>

@@ -7,14 +7,18 @@ const mocks = vi.hoisted(() => ({
   remove: vi.fn(),
   log: vi.fn(),
   dbTransaction: vi.fn(),
+  update: vi.fn(),
 }));
 vi.mock("@/modules/drive/server/context", () => ({
   requireDriveUser: mocks.user,
 }));
 vi.mock("@/server/db/client", () => ({
-  getDb: () => ({ $transaction: mocks.dbTransaction }),
+  getDb: () => ({
+    $transaction: mocks.dbTransaction,
+    transaction: { findFirst: mocks.find, updateMany: mocks.update },
+  }),
 }));
-import { DELETE } from "./route";
+import { DELETE, PATCH } from "./route";
 import { DriveError } from "@/modules/drive/errors";
 const context = { params: Promise.resolve({ id: "booking" }) };
 function request(origin = "http://localhost:3000") {
@@ -46,6 +50,33 @@ beforeEach(() => {
     paidBy: "Daniel",
   });
   mocks.remove.mockResolvedValue({ count: 1 });
+  mocks.update.mockResolvedValue({ count: 1 });
+});
+it("preserves the invoice on ordinary edits and removes it when switching income and expense", async () => {
+  for (const direction of ["EXPENSE", "INCOME"]) {
+    const body = new FormData();
+    for (const [key, value] of Object.entries({
+      direction,
+      amount: "100.00",
+      bookedAt: "2026-09-19",
+      description: "Technik",
+      paidBy: "",
+      isPaid: "on",
+    }))
+      body.set(key, value);
+    const response = await PATCH(
+      new Request("http://localhost:3000/api/finances/transactions/booking", {
+        method: "PATCH",
+        headers: { origin: "http://localhost:3000" },
+        body,
+      }),
+      context,
+    );
+    expect(response.status).toBe(200);
+    const data = mocks.update.mock.calls.at(-1)![0].data;
+    if (direction === "INCOME") expect(data.invoiceId).toBeNull();
+    else expect(data).not.toHaveProperty("invoiceId");
+  }
 });
 it("deletes only a booking in the authenticated organization and records its previous values", async () => {
   expect((await DELETE(request(), context)).status).toBe(200);
