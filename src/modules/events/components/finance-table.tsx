@@ -5,6 +5,7 @@ import { cents, euro, financeTotals } from "@/modules/events/finance";
 import { paymentSources } from "@/modules/finances/payment";
 import { ApiForm } from "@/modules/workspace/components/api-form";
 import { FinanceFields } from "./finance-fields";
+import { DeleteTransaction } from "./delete-transaction";
 
 type Row = {
   id: string;
@@ -50,6 +51,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
   const [payment, setPayment] = useState("");
   const [payer, setPayer] = useState("");
   const [search, setSearch] = useState("");
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const payers = [
     ...new Set([
       ...paymentSources,
@@ -59,6 +61,7 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
   const visible = rows
     .filter(
       (row) =>
+        !deletedIds.includes(row.id) &&
         (!direction || row.direction === direction) &&
         (!payment || row.isPaid === (payment === "paid")) &&
         (!payer ||
@@ -249,6 +252,14 @@ export function FinanceTable({ rows }: { rows: Row[] }) {
                       >
                         <FinanceFields row={row} />
                       </ApiForm>
+                      <DeleteTransaction
+                        id={row.id}
+                        description={row.description}
+                        amount={row.amount}
+                        onDeleted={() =>
+                          setDeletedIds((previous) => [...previous, row.id])
+                        }
+                      />
                     </details>
                   )}
                 </td>
