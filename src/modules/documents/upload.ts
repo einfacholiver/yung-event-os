@@ -60,7 +60,10 @@ export class DocumentUploadError extends Error {
     super(message);
   }
 }
-export function validateDocumentFile(file: File, purpose = "EXPENSES") {
+export function validateDocumentFile(
+  file: Pick<File, "name" | "size">,
+  purpose = "EXPENSES",
+) {
   if (!file.size || file.size > uploadLimit(purpose))
     throw new DocumentUploadError(
       `Bitte eine Datei mit Inhalt bis ${uploadLimit(purpose) / 1_000_000} MB auswählen.`,

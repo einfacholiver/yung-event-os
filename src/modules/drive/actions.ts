@@ -10,7 +10,8 @@ import {
 } from "./config";
 import { requireDriveUser } from "./server/context";
 import { driveErrorMessage } from "./errors";
-import { saveDriveFolder, disconnectDrive, syncDrive } from "./server/service";
+import { saveDriveFolder, disconnectDrive } from "./server/service";
+import { syncDriveStep } from "./server/sync-run";
 
 export async function connectGoogleDrive() {
   await requireDriveUser();
@@ -85,10 +86,10 @@ export async function disconnectGoogleDrive() {
   redirect(DRIVE_SETTINGS_PATH);
 }
 
-export async function syncGoogleDrive() {
+export async function syncGoogleDrive(runId: string) {
   try {
-    const result = await syncDrive();
-    revalidatePath(DRIVE_SETTINGS_PATH);
+    const result = await syncDriveStep(runId);
+    if (result.complete) revalidatePath(DRIVE_SETTINGS_PATH);
     return { success: true as const, result };
   } catch (error) {
     return { success: false as const, error: driveErrorMessage(error) };

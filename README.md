@@ -4,9 +4,12 @@ Die Anwendung ist jetzt ausschließlich nach Admin-Anmeldung zugänglich. Login,
 Zugriffstests und die Voraussetzungen für den Serverbetrieb stehen unter
 [Admin-Zugang](docs/ADMIN-LOGIN.md).
 
+Online-Betrieb mit Netlify und Neon, private Datenübernahme und genaue Einstellungen:
+[Deployment-Anleitung](docs/DEPLOY-NETLIFY-NEON.md). Die Cloud-Veröffentlichung muss anschließend auf Netlify geprüft werden.
+
 Aktueller Funktionsumfang, Testablauf und offene Arbeit: [Teststand](docs/TESTING-AND-STATUS.md). Diese Bestandsaufnahme ersetzt frühere pauschale Fertigmeldungen.
 
-Technische Projektbasis mit elf Kernmodellen, Migrationen, Event-Seeds, einem lesenden Events-Modul und einer Google-Drive-Verbindung mit manuellem Metadaten-Sync. Noch kein automatisches Event-Mapping, keine AI-Funktionen, Ticketimporte oder One.com-Integration.
+Event-Verwaltung mit editierbaren Details und Finanzen, Drive-Mapping und Metadaten-Sync, Dokumenten- und PDF-Vorschau, Media, Genehmigungen und One.com-CSV-Ticketimport. Neue Events können ihre Drive-Ordnerstruktur anlegen. Check-in ist ein Platzhalter; Tasks und AI gehören nicht zum aktuellen Fokus.
 
 ## Stack
 
@@ -42,7 +45,7 @@ Servermodule sind durch `server-only` vor Client-Imports geschützt. Geheimnisse
 
 ## Authentifizierung
 
-Auth.js verwendet Google OAuth, Datenbanksessions und den Prisma-Adapter. Die Drive-Verbindung erlaubt ausschließlich die verifizierte Google-Identität lightsignal.dj@gmail.com. OAuth-Tokens werden serverseitig verschlüsselt gespeichert. Die technischen Tabellen Account, Session und VerificationToken bleiben erhalten. Die Drive-Endpunkte prüfen Session, Organisation und Konto; das bestehende Events-Modul bleibt eine lokale Vorschau ohne allgemeinen Zugriffsschutz. Hinter einem Reverse Proxy die Auth.js-Host-Konfiguration passend zur Deployment-Umgebung setzen.
+Auth.js verwendet Google OAuth, Datenbanksessions und den Prisma-Adapter. Der Admin-Zugang und die Drive-Verbindung erlauben ausschließlich die verifizierte Google-Identität lightsignal.dj@gmail.com. OAuth-Tokens werden serverseitig verschlüsselt gespeichert. Die technischen Tabellen Account, Session und VerificationToken bleiben erhalten. Geschäftsseiten und API-Endpunkte sind durch Anmeldung und Berechtigungsprüfung geschützt. Hinter einem Reverse Proxy die Auth.js-Host-Konfiguration passend zur Deployment-Umgebung setzen.
 
 ## Befehle
 

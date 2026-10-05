@@ -10,6 +10,21 @@ import {
   type BrowseResult,
 } from "../schemas";
 
+export function validateUploadSession(value: string) {
+  const url = new URL(value);
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "www.googleapis.com" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/upload/drive/v3/files" ||
+    !url.searchParams.get("upload_id")
+  )
+    throw new DriveError("UNAVAILABLE", 503);
+  return url;
+}
+
 export async function googleJson(
   url: URL | string,
   token: string,
@@ -153,6 +168,94 @@ export async function verifiedDriveClient(
 
   return {
     folderPath,
+    file: getFile,
+    async beginResumable(input: {
+      id: string;
+      parentId: string;
+      name: string;
+      mimeType: string;
+      size: number;
+    }) {
+      folderIdSchema.parse(input.id);
+      folderIdSchema.parse(input.parentId);
+      const response = await request(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "X-Upload-Content-Type": input.mimeType,
+            "X-Upload-Content-Length": String(input.size),
+          },
+          body: JSON.stringify({
+            id: input.id,
+            name: input.name,
+            mimeType: input.mimeType,
+            parents: [input.parentId],
+          }),
+          cache: "no-store",
+          redirect: "error",
+          signal: AbortSignal.timeout(15_000),
+        },
+      );
+      if (!response.ok) throw new DriveError("UNAVAILABLE", 503);
+      const location = response.headers.get("location");
+      if (!location) throw new DriveError("UNAVAILABLE", 503);
+      return validateUploadSession(location).href;
+    },
+    async resumablePart(
+      location: string,
+      total: number,
+      start?: number,
+      bytes?: Uint8Array<ArrayBuffer>,
+    ) {
+      const url = validateUploadSession(location);
+      if (
+        !Number.isSafeInteger(total) ||
+        total < 1 ||
+        total > 100_000_000 ||
+        (bytes &&
+          (start === undefined ||
+            !Number.isSafeInteger(start) ||
+            start < 0 ||
+            bytes.length < 1 ||
+            bytes.length > 2_097_152 ||
+            start + bytes.length > total ||
+            (start + bytes.length < total && bytes.length % 262_144 !== 0)))
+      )
+        throw new DriveError("INVALID_INPUT", 400);
+      const response = await request(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/octet-stream",
+          "Content-Range": bytes
+            ? `bytes ${start}-${start! + bytes.length - 1}/${total}`
+            : `bytes */${total}`,
+        },
+        body: bytes ? new Blob([bytes]) : new Uint8Array(),
+        cache: "no-store",
+        redirect: "error",
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (response.status === 308) {
+        const range = response.headers.get("range");
+        if (range && !/^bytes=0-\d+$/.test(range))
+          throw new DriveError("UNAVAILABLE", 503);
+        const offset = range ? Number(range.slice(8)) + 1 : 0;
+        if (!Number.isSafeInteger(offset) || offset < 0 || offset > total)
+          throw new DriveError("UNAVAILABLE", 503);
+        return { offset, complete: false };
+      }
+      if (response.ok) return { offset: total, complete: true };
+      throw new DriveError(
+        response.status === 404 || response.status === 410
+          ? "NOT_FOUND"
+          : "UNAVAILABLE",
+        response.status === 404 || response.status === 410 ? 404 : 503,
+      );
+    },
     async generateFileId() {
       const result = z
         .object({ ids: z.array(folderIdSchema).length(1) })

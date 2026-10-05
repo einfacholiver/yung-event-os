@@ -9,7 +9,8 @@ export default defineConfig({
   migrations: { path: "prisma/migrations", seed: "tsx prisma/seed.ts" },
   datasource: {
     url:
-      process.env.DATABASE_URL ??
+      process.env.DIRECT_DATABASE_URL?.trim() ||
+      process.env.DATABASE_URL ||
       "postgresql://yung:yung_local@localhost:5432/yung_event_os?schema=public",
   },
 });

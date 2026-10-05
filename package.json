@@ -9,6 +9,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "build:netlify": "node scripts/check-hosting-env.mjs && npm run build",
+    "hosting:check": "node scripts/check-hosting-env.mjs",
+    "cloud:export": "node scripts/cloud-database.mjs export",
+    "cloud:import": "node scripts/cloud-database.mjs import",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
@@ -42,6 +46,7 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "dotenv": "18.0.5",
+    "hash-wasm": "4.12.0",
     "lucide-react": "1.52.0",
     "next": "16.3.8",
     "next-auth": "5.0.0-beta.32",

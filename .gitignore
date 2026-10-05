@@ -9,5 +9,8 @@ next-env.d.ts
 src/generated/
 .env*
 !.env.example
+!.env.cloud.example
+backups/
+.netlify/
 *.log
 .DS_Store

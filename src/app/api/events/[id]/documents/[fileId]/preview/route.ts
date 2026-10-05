@@ -3,6 +3,7 @@ import { getDriveCredentials } from "@/modules/drive/server/token";
 import { verifiedDriveClient } from "@/modules/drive/server/google-client";
 import { hasDriveContentScope } from "@/modules/drive/config";
 import { DriveError } from "@/modules/drive/errors";
+import { contentStream } from "@/server/content-stream";
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string; fileId: string }> },
@@ -26,7 +27,7 @@ export async function GET(
       credentials.account.providerAccountId,
     );
     const pdf = await client.pdf(file.externalId);
-    return new Response(pdf.bytes, {
+    return new Response(contentStream(pdf.bytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "inline",

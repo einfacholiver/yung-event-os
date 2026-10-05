@@ -25,23 +25,7 @@ const planSchema = z.object({
   ready: z.boolean(),
 });
 
-export async function uploadEventDocument(
-  eventId: string,
-  input: unknown,
-  file: File,
-) {
-  const { purpose, requestId } = uploadInputSchema.parse(input);
-  const mimeType = validateDocumentFile(file, purpose);
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (
-    mimeType === "application/pdf" &&
-    new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-"
-  )
-    throw new DocumentUploadError(
-      "Die ausgewählte Datei ist keine gültige PDF-Datei.",
-    );
-  const sha256 = createHash("sha256").update(bytes).digest("hex");
-  const md5Checksum = createHash("md5").update(bytes).digest("hex");
+export async function resolveUploadTarget(eventId: string, purpose: string) {
   const { organizationId, userId, connection, account, token } =
     await getDriveCredentials();
   if (!hasDriveWriteScope(account.scope))
@@ -117,6 +101,37 @@ export async function uploadEventDocument(
       "Der Zielpfad ist einem anderen Event zugewiesen. Bitte Drive-Mapping prüfen.",
       409,
     );
+  return {
+    db,
+    organizationId,
+    userId,
+    connection,
+    account,
+    client,
+    target,
+    path,
+  };
+}
+
+export async function uploadEventDocument(
+  eventId: string,
+  input: unknown,
+  file: File,
+) {
+  const { purpose, requestId } = uploadInputSchema.parse(input);
+  const mimeType = validateDocumentFile(file, purpose);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (
+    mimeType === "application/pdf" &&
+    new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-"
+  )
+    throw new DocumentUploadError(
+      "Die ausgewählte Datei ist keine gültige PDF-Datei.",
+    );
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  const md5Checksum = createHash("md5").update(bytes).digest("hex");
+  const { db, organizationId, userId, connection, client, target, path } =
+    await resolveUploadTarget(eventId, purpose);
   const logWhere = { organizationId, action, entityId: requestId };
   const existing = await db.activityLog.findFirst({ where: logWhere });
   const candidateId = existing

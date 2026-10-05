@@ -27,6 +27,58 @@ function requestWith(...bodies: unknown[]) {
 }
 
 describe("verified Drive browser", () => {
+  it("probes and resumes Google's confirmed byte range without exposing the access token", async () => {
+    const request = requestWith(identity);
+    request.mockResolvedValueOnce(
+      new Response(null, {
+        status: 308,
+        headers: { Range: "bytes=0-2097151" },
+      }),
+    );
+    request.mockResolvedValueOnce(Response.json({ id: "done" }));
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    const location =
+      "https://www.googleapis.com/upload/drive/v3/files?upload_id=session";
+    expect(await client.resumablePart(location, 2_097_160)).toEqual({
+      offset: 2_097_152,
+      complete: false,
+    });
+    expect(
+      await client.resumablePart(
+        location,
+        2_097_160,
+        2_097_152,
+        new Uint8Array(8),
+      ),
+    ).toEqual({ offset: 2_097_160, complete: true });
+    expect(request.mock.calls[1][1]?.headers).toMatchObject({
+      "Content-Range": "bytes */2097160",
+    });
+    expect(request.mock.calls[2][1]?.headers).toMatchObject({
+      "Content-Range": "bytes 2097152-2097159/2097160",
+    });
+  });
+  it("rejects foreign upload URLs and oversized or unaligned non-final chunks before sending credentials", async () => {
+    const request = requestWith(identity);
+    const client = await verifiedDriveClient("token", identity.sub, request);
+    await expect(
+      client.resumablePart(
+        "https://other.example/upload",
+        4_000_000,
+        0,
+        new Uint8Array(262_144),
+      ),
+    ).rejects.toBeDefined();
+    const location =
+      "https://www.googleapis.com/upload/drive/v3/files?upload_id=session";
+    await expect(
+      client.resumablePart(location, 4_000_000, 0, new Uint8Array(2_097_153)),
+    ).rejects.toBeDefined();
+    await expect(
+      client.resumablePart(location, 4_000_000, 0, new Uint8Array(10)),
+    ).rejects.toBeDefined();
+    expect(request).toHaveBeenCalledOnce();
+  });
   it("uses Google's upload session for files over 5 MB and refuses a foreign session URL", async () => {
     const uploaded = {
       id: "video-id",

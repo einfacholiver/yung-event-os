@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadInChunks } from "../upload-client";
 import {
   uploadAccept,
   uploadLimit,
@@ -24,6 +25,7 @@ export function DocumentUpload({
   const [message, setMessage] = useState("");
   const [failed, setFailed] = useState(false);
   const [started, setStarted] = useState(false);
+  const [progress, setProgress] = useState(0);
   const requestId = useRef<string | null>(null);
   const selectedFile = useRef<File | null>(null);
   return (
@@ -44,42 +46,28 @@ export function DocumentUpload({
         }
         requestId.current ??= crypto.randomUUID();
         selectedFile.current = file;
-        body.set("file", file);
-        body.set("requestId", requestId.current);
-        body.set("purpose", purpose);
         setPending(true);
         setStarted(true);
         setMessage("");
         setFailed(false);
         try {
-          const response = await fetch(`/api/events/${eventId}/documents`, {
-            method: "POST",
-            body,
-          });
-          const result = await response.json();
-          if (!response.ok) {
-            setFailed(true);
-            setMessage(
-              result.error ??
-                "Upload fehlgeschlagen. Bitte mit derselben Datei erneut versuchen.",
-            );
-            if (response.status === 400) {
-              requestId.current = null;
-              selectedFile.current = null;
-              setStarted(false);
-            }
-            return;
-          }
+          const result = await uploadInChunks(
+            file,
+            eventId,
+            purpose,
+            requestId.current,
+            setProgress,
+          );
           setMessage(`„${result.name}“ in ${result.path} hochgeladen.`);
           form.reset();
           requestId.current = null;
           selectedFile.current = null;
           setStarted(false);
           router.refresh();
-        } catch {
+        } catch (error) {
           setFailed(true);
           setMessage(
-            "Verbindung unterbrochen. Bitte mit derselben Datei erneut versuchen; derselbe Upload erzeugt keine zweite Drive-Datei.",
+            `${error instanceof Error ? error.message : "Verbindung unterbrochen."} Bitte mit derselben Datei erneut versuchen.`,
           );
         } finally {
           setPending(false);
@@ -136,11 +124,26 @@ export function DocumentUpload({
         className="bg-primary text-primary-foreground rounded px-4 py-2 disabled:opacity-50"
       >
         {pending
-          ? "Lädt hoch …"
+          ? `Lädt hoch … ${progress} %`
           : started
             ? "Upload erneut versuchen"
             : "In Drive hochladen"}
       </button>
+      {started && !pending && (
+        <button
+          type="button"
+          className="ml-3 rounded border px-4 py-2 text-sm"
+          onClick={() => {
+            requestId.current = null;
+            selectedFile.current = null;
+            setStarted(false);
+            setProgress(0);
+            setMessage("");
+          }}
+        >
+          Andere Datei auswählen
+        </button>
+      )}
       {message && (
         <p
           role="status"

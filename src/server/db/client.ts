@@ -11,7 +11,12 @@ export function getDb() {
       .pick({ DATABASE_URL: true })
       .parse(process.env);
     globalForPrisma.prisma = new PrismaClient({
-      adapter: new PrismaPg({ connectionString: DATABASE_URL }),
+      adapter: new PrismaPg({
+        connectionString: DATABASE_URL,
+        max: 3,
+        connectionTimeoutMillis: 15_000,
+        idleTimeoutMillis: 10_000,
+      }),
     });
   }
   return globalForPrisma.prisma;

@@ -23,6 +23,7 @@ export function DriveBrowser({
   const [notice, setNotice] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const controller = useRef<AbortController | null>(null);
+  const syncRunId = useRef<string | null>(null);
 
   async function browse(folderId: string, pageToken?: string) {
     controller.current?.abort();
@@ -85,6 +86,7 @@ export function DriveBrowser({
       const result = await selectDriveFolder(data.folder.id);
       if (result.success) {
         setSelection(result.folder);
+        syncRunId.current = null;
         setNotice("Ordner gespeichert. Es wurde noch kein Sync gestartet.");
       } else setError(result.error);
     } catch {
@@ -101,12 +103,24 @@ export function DriveBrowser({
     setError(null);
     setNotice(null);
     try {
-      const result = await syncGoogleDrive();
-      if (!result.success) setError(result.error);
-      else
+      const key = `yung-drive-sync:${selection?.id ?? "root"}`;
+      syncRunId.current ??= sessionStorage.getItem(key) ?? crypto.randomUUID();
+      sessionStorage.setItem(key, syncRunId.current);
+      while (true) {
+        const result = await syncGoogleDrive(syncRunId.current);
+        if (!result.success) {
+          setError(result.error);
+          break;
+        }
         setNotice(
-          `Sync abgeschlossen: ${result.result.total} Metadaten (${result.result.folders} Ordner, ${result.result.files} Dateien).`,
+          `Sync ${result.result.complete ? "abgeschlossen" : "läuft"}: ${result.result.total} Metadaten (${result.result.folders} Ordner, ${result.result.files} Dateien).`,
         );
+        if (result.result.complete) {
+          syncRunId.current = null;
+          sessionStorage.removeItem(key);
+          break;
+        }
+      }
     } catch {
       setError(
         "Sync konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
@@ -149,6 +163,18 @@ export function DriveBrowser({
               disabled={loading || saving || syncing}
             >
               {syncing ? "Sync läuft …" : "Drive synchronisieren"}
+            </Button>
+          )}
+          {selection && error && !syncing && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                syncRunId.current = null;
+                sessionStorage.removeItem(`yung-drive-sync:${selection.id}`);
+                void sync();
+              }}
+            >
+              Sync neu starten
             </Button>
           )}
         </div>

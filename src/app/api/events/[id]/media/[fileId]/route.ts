@@ -2,6 +2,7 @@ import { getDocuments } from "@/modules/documents/server/queries";
 import { getDriveCredentials } from "@/modules/drive/server/token";
 import { verifiedDriveClient } from "@/modules/drive/server/google-client";
 import { hasDriveContentScope } from "@/modules/drive/config";
+import { contentStream } from "@/server/content-stream";
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string; fileId: string }> },
@@ -24,7 +25,7 @@ export async function GET(
       credentials.account.providerAccountId,
     );
     const image = await client.image(file.externalId);
-    return new Response(image.bytes, {
+    return new Response(contentStream(image.bytes), {
       headers: {
         "Content-Type": image.type,
         "Cache-Control": "private, no-store",
