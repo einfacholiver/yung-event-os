@@ -1,5 +1,6 @@
 import { getDb } from "@/server/db/client";
 import { TicketImport } from "./ticket-import";
+import { TicketSalesSummary } from "./ticket-sales-summary";
 export async function EventTickets({
   id,
   organizationId,
@@ -7,6 +8,10 @@ export async function EventTickets({
   id: string;
   organizationId: string;
 }) {
+  const salesItems = await getDb().ticketSalesItem.findMany({
+    where: { eventId: id, organizationId },
+    orderBy: { position: "asc" },
+  });
   const orders = await getDb().ticketOrder.findMany({
     where: { eventId: id, organizationId },
     orderBy: { orderNumber: "asc" },
@@ -14,6 +19,13 @@ export async function EventTickets({
   return (
     <section className="space-y-6">
       <h2 className="text-2xl font-semibold">Tickets</h2>
+      <TicketSalesSummary
+        items={salesItems.map((item) => ({
+          ...item,
+          unitPrice: item.unitPrice.toString(),
+          grossRevenue: item.grossRevenue.toString(),
+        }))}
+      />
       <TicketImport eventId={id} />
       <p>
         {orders.length} Bestellungen gespeichert. Bestellungen sind keine

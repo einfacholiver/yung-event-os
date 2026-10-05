@@ -33,6 +33,7 @@ beforeAll(async () => {
     "20261004030000_drive_mapping_categories",
     "20261004040000_ticket_orders",
     "20261005000000_transaction_payment",
+    "20261005010000_ticket_sales_items",
   ]) {
     await db.exec(
       readFileSync(`prisma/migrations/${name}/migration.sql`, "utf8"),
@@ -51,6 +52,19 @@ afterAll(async () => {
 });
 
 describe("core model SQL migration", () => {
+  it("validates article totals and their organization assignment", async () => {
+    await db.exec(
+      `INSERT INTO "TicketSalesItem" (id,"organizationId","eventId",description,category,quantity,"unitPrice","grossRevenue",position,"updatedAt") VALUES ('sale','org-a','event-a','Regular','TICKET',251,20,5020,0,NOW())`,
+    );
+    await expect(
+      db.exec(`UPDATE "TicketSalesItem" SET "grossRevenue"=1 WHERE id='sale'`),
+    ).rejects.toMatchObject({ code: "23514" });
+    await expect(
+      db.exec(
+        `UPDATE "TicketSalesItem" SET "organizationId"='org-b' WHERE id='sale'`,
+      ),
+    ).rejects.toMatchObject({ code: "23503" });
+  });
   it("stores payer for paid entries and rejects a payer on an unpaid entry", async () => {
     await db.exec(
       `INSERT INTO "Transaction" (id, "organizationId", direction, amount, "bookedAt", "isPaid", "paidBy") VALUES ('paid-expense', 'org-a', 'EXPENSE', 10, NOW(), true, 'Oliver')`,
@@ -111,6 +125,7 @@ describe("core model SQL migration", () => {
         "Session",
         "VerificationToken",
         "TicketOrder",
+        "TicketSalesItem",
       ].sort(),
     );
   });

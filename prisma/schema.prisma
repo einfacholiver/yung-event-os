@@ -83,6 +83,7 @@ model Organization {
 }
 
 model Event {
+  ticketSalesItems    TicketSalesItem[]
   ticketOrders        TicketOrder[]
   id                  String               @id @default(cuid())
   organizationId      String
@@ -126,6 +127,25 @@ model TicketOrder {
   event          Event    @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
 
   @@unique([eventId, orderNumber])
+  @@index([organizationId, eventId])
+}
+
+// Aggregated article sales, kept separate from individual webshop orders.
+model TicketSalesItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  eventId        String
+  description    String
+  category       String
+  quantity       Int
+  unitPrice      Decimal  @db.Decimal(14, 2)
+  grossRevenue   Decimal  @db.Decimal(14, 2)
+  position       Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  event          Event    @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([eventId, description])
   @@index([organizationId, eventId])
 }
 

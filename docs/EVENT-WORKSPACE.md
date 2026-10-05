@@ -33,6 +33,8 @@ Das Anlegen echter Google-Ordner muss nach Bestätigung der zusätzlichen OAuth-
 
 ## Zahlungsstatus und Chapter-Four-Übernahme
 
+Chapter Four → Tickets enthält zusätzlich die vom Nutzer bereitgestellte Artikel-Verkaufsübersicht: fünf Ticketpositionen mit 7.990 EUR und zwei Upgrade-Positionen mit 300 EUR, insgesamt 8.290 EUR Bruttoumsatz. Die Artikelübersicht liegt getrennt von One.com-Einzelbestellungen und Finanzbuchungen in TicketSalesItem. Gruppenprodukte sind Pakete; Upgrades liefern keine weiteren Eintrittstickets. Diese Daten werden nicht automatisch als Einnahmen gebucht und nicht mit importierten Bestellumsätzen addiert.
+
 Unter Bearbeiten → Löschen können EUR-Buchungen entfernt werden. Vorher zeigt die App Beschreibung und Betrag und verlangt „Endgültig löschen“; Abbrechen entfernt nichts. Nach Erfolg werden Tabelle und Kennzahlen aktualisiert. Nur Buchungen der angemeldeten Organisation sind zugänglich. Die früheren Buchungswerte werden zusammen mit dem Löschvorgang atomar im ActivityLog festgehalten. Drive-Dokumente und verknüpfte Rechnungen bleiben erhalten.
 
 Die Buchungstabelle lässt sich über Datum, Beschreibung, Einnahmen, Ausgaben, Bezahlt und Bezahlt von sortieren. Ein zweiter Klick kehrt die Richtung um. Filter für Art, Zahlungsstatus und Zahler sowie die Beschreibungssuche sind kombinierbar. Trefferzahl und gefilterte EUR-Summen stehen über der Tabelle; die Kennzahlen des gesamten Events bleiben unverändert. „Filter zurücksetzen“ zeigt wieder alle Buchungen. Die sechs ursprünglich als „Ecki“ übernommenen Ausgaben (665 EUR) wurden nach Bestätigung des Nutzers Daniel zugeordnet.
