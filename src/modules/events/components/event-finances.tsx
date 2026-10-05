@@ -3,6 +3,7 @@ import { getDb } from "@/server/db/client";
 import { cents, euro, financeTotals } from "@/modules/events/finance";
 import { ApiForm } from "@/modules/workspace/components/api-form";
 import { FinanceFields } from "./finance-fields";
+import { FinanceTable } from "./finance-table";
 export async function EventFinances({
   id,
   organizationId,
@@ -17,7 +18,12 @@ export async function EventFinances({
     orderBy: [{ bookedAt: "desc" }, { id: "asc" }],
   });
   const rows = transactions.map((row) => ({
-    ...row,
+    id: row.id,
+    direction: row.direction,
+    description: row.description,
+    currency: row.currency,
+    isPaid: row.isPaid,
+    paidBy: row.paidBy,
     amount: row.amount.toString(),
     bookedAt: row.bookedAt.toISOString().slice(0, 10),
   }));
@@ -101,74 +107,7 @@ export async function EventFinances({
               <FinanceFields />
             </ApiForm>
           </div>
-          <div className="overflow-auto rounded-xl border">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-stone-100">
-                <tr>
-                  {[
-                    "Datum",
-                    "Beschreibung",
-                    "Einnahmen",
-                    "Ausgaben",
-                    "Bezahlt",
-                    "Bezahlt von",
-                    "Bearbeiten",
-                  ].map((label) => (
-                    <th className="p-3" key={label}>
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id} className="border-t">
-                    <td className="p-3">{row.bookedAt}</td>
-                    <td className="p-3">{row.description || "—"}</td>
-                    <td className="p-3">
-                      {row.direction === "INCOME"
-                        ? `${row.amount} ${row.currency}`
-                        : "—"}
-                    </td>
-                    <td className="p-3">
-                      {row.direction === "EXPENSE"
-                        ? `${row.amount} ${row.currency}`
-                        : "—"}
-                    </td>
-                    <td className="p-3">
-                      {row.isPaid ? "✓ Ja" : "Offen / unbestätigt"}
-                    </td>
-                    <td className="p-3">
-                      {row.isPaid ? (row.paidBy ?? "Nicht angegeben") : "—"}
-                    </td>
-                    <td className="p-3">
-                      {row.currency === "EUR" && (
-                        <details>
-                          <summary className="cursor-pointer">
-                            Bearbeiten
-                          </summary>
-                          <ApiForm
-                            method="PATCH"
-                            reset={false}
-                            endpoint={`/api/finances/transactions/${row.id}`}
-                            className="min-w-64 space-y-3 p-3"
-                          >
-                            <FinanceFields row={row} />
-                          </ApiForm>
-                        </details>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!rows.length && (
-              <p className="p-6">
-                Noch keine Buchungen. Trage oben die erste Einnahme oder Ausgabe
-                ein.
-              </p>
-            )}
-          </div>
+          <FinanceTable rows={rows} />
           <Link className="underline" href={`/events/${id}/documents`}>
             Vorhandene Rechnungen und Kostenübersichten öffnen
           </Link>
