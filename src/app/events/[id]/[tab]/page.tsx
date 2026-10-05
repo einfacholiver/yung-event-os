@@ -16,7 +16,7 @@ export default async function EventSection({
   searchParams,
 }: {
   params: Promise<{ id: string; tab: string }>;
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; mediaType?: string | string[] }>;
 }) {
   const { id, tab: slug } = await params;
   if (slug === "invoices") redirect(`/events/${id}/documents`);
@@ -39,12 +39,21 @@ export default async function EventSection({
   const previewEnabled = hasDriveContentScope(
     (await getDriveConnection()).account.scope,
   );
-  const category = (await searchParams).category;
+  const { category, mediaType: requestedMediaType } = await searchParams;
+  const mediaType =
+    requestedMediaType === "images" || requestedMediaType === "videos"
+      ? requestedMediaType
+      : "";
+  const mediaFiles = documents.filter((file) => file.category === "MEDIA");
   const filtered = documents.filter((file) =>
     slug === "permissions"
       ? file.category === "PERMISSIONS"
       : slug === "media"
-        ? file.category === "MEDIA"
+        ? file.category === "MEDIA" &&
+          (!mediaType ||
+            file.mimeType.startsWith(
+              mediaType === "images" ? "image/" : "video/",
+            ))
         : category === "INCOME" || category === "EXPENSES"
           ? file.category === category
           : true,
@@ -70,6 +79,34 @@ export default async function EventSection({
               href={`/events/${id}/documents${value ? `?category=${value}` : ""}`}
             >
               {label}
+            </Link>
+          ))}
+        </nav>
+      )}
+      {slug === "media" && (
+        <nav aria-label="Medienart filtern" className="flex flex-wrap gap-3">
+          {[
+            ["", "Alle", mediaFiles.length],
+            [
+              "images",
+              "Bilder",
+              mediaFiles.filter((file) => file.mimeType.startsWith("image/"))
+                .length,
+            ],
+            [
+              "videos",
+              "Videos",
+              mediaFiles.filter((file) => file.mimeType.startsWith("video/"))
+                .length,
+            ],
+          ].map(([value, label, count]) => (
+            <Link
+              key={value}
+              aria-current={mediaType === value ? "page" : undefined}
+              className={`rounded border px-4 py-2 ${mediaType === value ? "bg-stone-900 text-white" : ""}`}
+              href={`/events/${id}/media${value ? `?mediaType=${value}` : ""}`}
+            >
+              {label} ({count})
             </Link>
           ))}
         </nav>
@@ -118,9 +155,11 @@ export default async function EventSection({
             <p className="mt-2 text-xs">
               {file.mimeType.startsWith("image/")
                 ? "Bild"
-                : file.mimeType === "application/vnd.google-apps.spreadsheet"
-                  ? "Google Sheets"
-                  : file.mimeType}
+                : file.mimeType.startsWith("video/")
+                  ? "Video"
+                  : file.mimeType === "application/vnd.google-apps.spreadsheet"
+                    ? "Google Sheets"
+                    : file.mimeType}
             </p>
             {previewEnabled && file.mimeType === "application/pdf" && (
               <PdfPreview
@@ -133,8 +172,9 @@ export default async function EventSection({
       </div>
       {!filtered.length && (
         <p className="rounded-xl border border-dashed p-8">
-          Noch keine Dateien in diesem Bereich. Prüfe die Ordnerzuordnung und
-          synchronisiere Drive.
+          {slug === "media" && mediaType && mediaFiles.length
+            ? `Keine ${mediaType === "images" ? "Bilder" : "Videos"} im gespeicherten Media-Stand. Wähle „Alle“, um die übrigen Dateien anzuzeigen.`
+            : "Noch keine Dateien in diesem Bereich. Prüfe die Ordnerzuordnung und synchronisiere Drive."}
         </p>
       )}
       <Link
