@@ -2,6 +2,8 @@
 
 Die Anwendung ist für Netlify mit Neon PostgreSQL vorbereitet. Das Neon-Projekt `yung-event-os` mit PostgreSQL in Frankfurt ist bereits angelegt. Die Veröffentlichung und der echte Cloud-Test stehen noch aus. Die vorhandenen Daten bleiben lokal erhalten.
 
+**Aktueller Stand vom 5. Oktober 2026:** Die Verbindungen in `.env.cloud` sind privat hinterlegt und die vorhandene Datenbank wurde erfolgreich nach Neon übernommen. Alle Datensatzanzahlen wurden mit dem Export abgeglichen; die fünf Events sind auch in der Neon-Tabellenansicht bestätigt. Schritte 1 und 2 sind für diesen Umzug erledigt. Den Import nicht erneut ausführen; mit Schritt 3 fortfahren. Der Netlify-Deployment-Test steht weiterhin aus.
+
 ## 1. Neon-Verbindungen privat hinterlegen
 
 Im Neon-Projekt unter **Connect** die Datenbank auswählen. Zwei Verbindungsstrings kopieren: einmal mit **Connection pooling** aktiviert, einmal ohne Pooling. Die URLs enthalten ein Passwort und gehören nicht in Chats, Screenshots oder Git.

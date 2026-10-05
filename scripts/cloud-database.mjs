@@ -7,6 +7,7 @@ import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as tls from "node:tls";
 
 class SafeError extends Error {}
 async function fileHash(file) {
@@ -164,6 +165,8 @@ async function importDatabase(argument) {
   if (manifest.version !== 1 || (await fileHash(file)) !== manifest.sha256)
     throw new SafeError("Backup checksum does not match its export manifest.");
   const target = new Client({ connectionString: cloud.DIRECT_DATABASE_URL });
+  const certificateFile = `/tmp/yung-neon-ca-${randomBytes(8).toString("hex")}.pem`;
+  let certificateWritten = false;
   try {
     await target.connect();
     if (Object.values(await counts(target)).some((count) => count !== "0"))
@@ -184,6 +187,27 @@ async function importDatabase(argument) {
     migration.child.stdin.end();
     migration.child.stdout.resume();
     await migration.done;
+    // Alpine's CA bundle can lag behind Node's trusted roots. Use the same
+    // trusted certificate authorities as the verified Node connection above.
+    const certificates =
+      typeof tls.getCACertificates === "function"
+        ? tls.getCACertificates("default")
+        : tls.rootCertificates;
+    const certificateWriter = run("docker", [
+      "compose",
+      "exec",
+      "-T",
+      "postgres",
+      "sh",
+      "-c",
+      'umask 077; cat > "$1"',
+      "sh",
+      certificateFile,
+    ]);
+    certificateWriter.child.stdout.resume();
+    certificateWriter.child.stdin.end(certificates.join("\n") + "\n");
+    await certificateWriter.done;
+    certificateWritten = true;
     const restore = run("docker", [
       "compose",
       "exec",
@@ -191,7 +215,7 @@ async function importDatabase(argument) {
       "-e",
       "PGSSLMODE=verify-full",
       "-e",
-      "PGSSLROOTCERT=system",
+      `PGSSLROOTCERT=${certificateFile}`,
       "postgres",
       "sh",
       "-c",
@@ -217,6 +241,20 @@ async function importDatabase(argument) {
       "Neon import completed and row counts verified. Existing local data is unchanged; no browser sessions were transferred.",
     );
   } finally {
+    if (certificateWritten) {
+      const cleanup = run("docker", [
+        "compose",
+        "exec",
+        "-T",
+        "postgres",
+        "rm",
+        "-f",
+        certificateFile,
+      ]);
+      cleanup.child.stdin.end();
+      cleanup.child.stdout.resume();
+      await cleanup.done.catch(() => {});
+    }
     await target.end().catch(() => {});
   }
 }
