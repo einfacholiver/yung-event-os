@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSameOrigin, mutationError } from "@/server/http";
+import { requireDriveUser } from "@/modules/drive/server/context";
 import {
   createEventWithFolders,
   EventSetupError,
@@ -7,6 +8,7 @@ import {
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
+    await requireDriveUser();
     const event = await createEventWithFolders(
       Object.fromEntries(await request.formData()),
     );

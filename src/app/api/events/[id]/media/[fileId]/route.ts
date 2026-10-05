@@ -3,6 +3,7 @@ import { getDriveCredentials } from "@/modules/drive/server/token";
 import { verifiedDriveClient } from "@/modules/drive/server/google-client";
 import { hasDriveContentScope } from "@/modules/drive/config";
 import { contentStream } from "@/server/content-stream";
+import { DriveError } from "@/modules/drive/errors";
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string; fileId: string }> },
@@ -32,7 +33,10 @@ export async function GET(
         "X-Content-Type-Options": "nosniff",
       },
     });
-  } catch {
-    return new Response(null, { status: 503 });
+  } catch (error) {
+    return new Response(null, {
+      status: error instanceof DriveError ? error.status : 503,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   }
 }

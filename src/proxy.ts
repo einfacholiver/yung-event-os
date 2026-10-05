@@ -1,47 +1,28 @@
-import {
-  NextResponse,
-  type NextRequest,
-  type NextFetchEvent,
-  type NextMiddleware,
-} from "next/server";
-import { auth } from "@/server/auth";
-import { AccessError, verifyAdminSession } from "@/server/auth/access";
+import { NextResponse, type NextRequest } from "next/server";
 import { isPublicPath, LOGIN_PATH } from "@/server/auth/policy";
 
-const protectRequest = auth(async (request) => {
+// Keep Proxy free of Auth.js/Prisma/pg: Netlify bundles it as an Edge Function.
+// Cookie presence is only a routing hint, never authorization. WorkspaceLayout
+// and business services validate the actual DB session in the Node runtime.
+export function proxy(request: NextRequest) {
   if (isPublicPath(request.nextUrl.pathname)) return NextResponse.next();
-  try {
-    await verifyAdminSession(request.auth);
-    const response = NextResponse.next();
+  const hasSessionCookie = [
+    "authjs.session-token",
+    "__Secure-authjs.session-token",
+  ].some((name) => !!request.cookies.get(name)?.value);
+  if (!hasSessionCookie) {
+    if (request.nextUrl.pathname.startsWith("/api/"))
+      return NextResponse.json(
+        { error: "Anmeldung erforderlich." },
+        { status: 401, headers: { "Cache-Control": "no-store" } },
+      );
+    const response = NextResponse.redirect(new URL(LOGIN_PATH, request.url));
     response.headers.set("Cache-Control", "private, no-store");
     return response;
-  } catch (error) {
-    const status = error instanceof AccessError ? error.status : 503;
-    if (request.nextUrl.pathname.startsWith("/api/")) {
-      return NextResponse.json(
-        {
-          error:
-            status === 503
-              ? "Dienst momentan nicht verfügbar."
-              : "Anmeldung erforderlich oder Zugriff verweigert.",
-        },
-        { status, headers: { "Cache-Control": "no-store" } },
-      );
-    }
-    if (status === 503)
-      return new NextResponse("Dienst momentan nicht verfügbar.", {
-        status,
-        headers: { "Cache-Control": "no-store" },
-      });
-    return NextResponse.redirect(new URL(LOGIN_PATH, request.url));
   }
-});
-
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (isPublicPath(request.nextUrl.pathname)) return NextResponse.next();
-  // The installed Auth.js lazy configuration resolves wrappers asynchronously.
-  const handler = (await protectRequest) as unknown as NextMiddleware;
-  return handler(request, event);
+  const response = NextResponse.next();
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 export const config = {

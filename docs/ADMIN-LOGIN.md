@@ -20,9 +20,13 @@ unter HTTPS Secure-Cookies sowie CSRF-Schutz, OAuth State, PKCE und Nonce. Alte
 Sitzungen aus dem bisherigen Entwicklungsstand können ihre bisherige Laufzeit
 behalten; vor einer öffentlichen Bereitstellung alle Sitzungen widerrufen.
 Die API prüft zusätzlich die Herkunft von schreibenden Anfragen und den Benutzer
-vor dem Datenzugriff. Die zentrale Eingangskontrolle schützt auch direkte Links,
-Vorschauen und API-Aufrufe; serverseitige Datenzugriffe prüfen unabhängig davon
-die gespeicherte Benutzeridentität und Organisation. Öffentliche Ausnahmen sind
+vor dem Datenzugriff. Der Proxy leitet Anfragen ohne Session-Cookie frühzeitig
+zur Anmeldung weiter beziehungsweise antwortet der API mit HTTP 401. Er liest
+keine Datenbank, damit er als Netlify-Edge-Funktion gebündelt werden kann.
+Ein Cookie allein gewährt keinen Zugriff: Das Workspace-Layout und serverseitige
+Datenzugriffe prüfen die tatsächliche Datenbanksession, Benutzeridentität und
+Organisation im Node-Runtime. Gefälschte und widerrufene Cookies werden dort
+abgewiesen. Öffentliche Ausnahmen sind
 nur Login, Auth.js-Endpunkte und technische/Branding-Dateien.
 
 `npm run test:auth` führt einen lokalen HTTP-Zugriffstest aus, einschließlich

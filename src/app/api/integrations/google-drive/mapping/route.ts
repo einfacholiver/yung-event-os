@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DriveError } from "@/modules/drive/errors";
 import { saveDriveMapping } from "@/modules/drive/server/mapping";
+import { requireDriveUser } from "@/modules/drive/server/context";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function POST(request: Request) {
   if (!sameOrigin(request))
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 403 });
   try {
+    await requireDriveUser();
     const form = await request.formData();
     await saveDriveMapping({
       eventId: String(form.get("eventId") ?? ""),

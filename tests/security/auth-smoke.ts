@@ -18,7 +18,29 @@ const db = new PrismaClient({
 const fetchLocal = (path: string, options: RequestInit = {}) =>
   fetch(new URL(path, base), { ...options, redirect: "manual" });
 const assertBlockedPage = async (path: string, headers?: HeadersInit) => {
-  const response = await fetchLocal(path, { headers });
+  let response = await fetchLocal(path, { headers });
+  // Next 16 can normalize an invalid RSC cache key before the route executes.
+  // Follow only this same-origin/path normalization, then demand /login.
+  for (let attempts = 0; attempts < 2 && response.status === 307; attempts++) {
+    const location = new URL(response.headers.get("location")!, base);
+    if (location.pathname === "/login") break;
+    assert.equal(location.origin, base.origin, path);
+    assert.equal(location.pathname, new URL(path, base).pathname, path);
+    assert.doesNotMatch(await response.text(), /Chapter Four/, path);
+    response = await fetchLocal(location.pathname + location.search, {
+      headers,
+    });
+  }
+  if (new Headers(headers).get("RSC") === "1" && response.status === 200) {
+    assert.match(
+      response.headers.get("content-type") ?? "",
+      /text\/x-component/,
+    );
+    const body = await response.text();
+    assert.match(body, /NEXT_REDIRECT;replace;\/login;307;/, path);
+    assert.doesNotMatch(body, /Chapter Four/, path);
+    return;
+  }
   assert.equal(response.status, 307, path);
   assert.equal(
     new URL(response.headers.get("location")!, base).pathname,
@@ -45,6 +67,43 @@ try {
   await assertBlockedPage("/events", {
     cookie: "authjs.session-token=forged-session",
   });
+  await assertBlockedPage("/events?_rsc=forged-session", {
+    cookie: "authjs.session-token=forged-session",
+    RSC: "1",
+  });
+  // These cookies pass the Edge routing hint. The real Node authorization
+  // must still reject them before any business or Drive data is accessed.
+  for (const path of [
+    "/api/integrations/google-drive/browse",
+    "/api/events/private/documents/private/preview",
+    "/api/events/private/media/private",
+  ]) {
+    const response = await fetchLocal(path, {
+      headers: { cookie: "authjs.session-token=forged-session" },
+    });
+    assert.equal(response.status, 401, path);
+  }
+  for (const path of [
+    "/api/events",
+    "/api/events/private/tickets",
+    "/api/finances/transactions",
+    "/api/invoices",
+    "/api/tasks",
+    "/api/events/private/documents",
+    "/api/events/private/documents/upload",
+    "/api/integrations/google-drive/mapping",
+  ]) {
+    const response = await fetchLocal(path, {
+      method: "POST",
+      headers: {
+        origin: base.origin,
+        host: base.host,
+        cookie: "authjs.session-token=forged-session",
+      },
+      body: new FormData(),
+    });
+    assert.equal(response.status, 401, path);
+  }
   for (const method of ["GET", "POST", "PATCH", "DELETE"]) {
     const response = await fetchLocal("/api/finances/transactions", {
       method,
