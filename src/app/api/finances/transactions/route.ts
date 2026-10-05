@@ -4,8 +4,10 @@ import { getDb } from "@/server/db/client";
 import { requireDriveUser } from "@/modules/drive/server/context";
 import { moneySchema } from "@/modules/workspace/schemas";
 import { mutationError, requireSameOrigin } from "@/server/http";
+import { paymentFields, normalizePayment } from "@/modules/finances/payment";
 
 const inputSchema = z.object({
+  ...paymentFields,
   eventId: z.string().min(1),
   direction: z.enum(["INCOME", "EXPENSE"]),
   amount: moneySchema.refine((value) => Number(value) > 0),
@@ -16,8 +18,8 @@ export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
     const user = await requireDriveUser();
-    const input = inputSchema.parse(
-      Object.fromEntries(await request.formData()),
+    const input = normalizePayment(
+      inputSchema.parse(Object.fromEntries(await request.formData())),
     );
     const event = await getDb().event.findFirst({
       where: { id: input.eventId, organizationId: user.organizationId },
@@ -36,6 +38,8 @@ export async function POST(request: Request) {
         amount: input.amount,
         bookedAt: new Date(input.bookedAt),
         description: input.description || null,
+        isPaid: input.isPaid,
+        paidBy: input.paidBy,
       },
     });
     return NextResponse.json(

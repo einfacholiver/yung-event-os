@@ -195,6 +195,8 @@ model DriveFolderMapping {
 }
 
 model Transaction {
+  isPaid         Boolean              @default(false)
+  paidBy         String?
   id             String               @id @default(cuid())
   organizationId String
   eventId        String?

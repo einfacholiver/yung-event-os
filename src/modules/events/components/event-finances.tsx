@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/server/db/client";
-import { euro, financeTotals } from "@/modules/events/finance";
+import { cents, euro, financeTotals } from "@/modules/events/finance";
 import { ApiForm } from "@/modules/workspace/components/api-form";
 import { FinanceFields } from "./finance-fields";
 export async function EventFinances({
@@ -22,6 +22,12 @@ export async function EventFinances({
     bookedAt: row.bookedAt.toISOString().slice(0, 10),
   }));
   const totals = financeTotals(rows);
+  const unpaid = rows
+    .filter(
+      (row) =>
+        row.direction === "EXPENSE" && row.currency === "EUR" && !row.isPaid,
+    )
+    .reduce((total, row) => total + cents(row.amount), 0n);
   return (
     <section className="space-y-6">
       <h2 className="text-2xl font-semibold">
@@ -44,6 +50,12 @@ export async function EventFinances({
           </div>
         ))}
       </div>
+      <p className="text-sm">
+        Ausgaben bezahlt: <strong>{euro(totals.expenses - unpaid)}</strong> ·
+        Offen / noch nicht bestätigt: <strong>{euro(unpaid)}</strong>. Beide
+        sind in den Gesamtkosten enthalten. Private Auslagen sind keine
+        zusätzlichen Kosten bei späterer Erstattung.
+      </p>
       {rows.some((row) => row.currency !== "EUR") && (
         <p>
           Andere Währungen werden separat angezeigt und nicht in die EUR-Summen
@@ -83,7 +95,7 @@ export async function EventFinances({
             <h3 className="mb-4 font-semibold">Neue Buchung</h3>
             <ApiForm
               endpoint="/api/finances/transactions"
-              className="grid gap-3 md:grid-cols-5"
+              className="grid gap-3 md:grid-cols-4"
             >
               <input type="hidden" name="eventId" value={id} />
               <FinanceFields />
@@ -98,6 +110,8 @@ export async function EventFinances({
                     "Beschreibung",
                     "Einnahmen",
                     "Ausgaben",
+                    "Bezahlt",
+                    "Bezahlt von",
                     "Bearbeiten",
                   ].map((label) => (
                     <th className="p-3" key={label}>
@@ -120,6 +134,12 @@ export async function EventFinances({
                       {row.direction === "EXPENSE"
                         ? `${row.amount} ${row.currency}`
                         : "—"}
+                    </td>
+                    <td className="p-3">
+                      {row.isPaid ? "✓ Ja" : "Offen / unbestätigt"}
+                    </td>
+                    <td className="p-3">
+                      {row.isPaid ? (row.paidBy ?? "Nicht angegeben") : "—"}
                     </td>
                     <td className="p-3">
                       {row.currency === "EUR" && (

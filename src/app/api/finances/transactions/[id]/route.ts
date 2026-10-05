@@ -4,7 +4,9 @@ import { getDb } from "@/server/db/client";
 import { requireDriveUser } from "@/modules/drive/server/context";
 import { moneySchema } from "@/modules/workspace/schemas";
 import { mutationError, requireSameOrigin } from "@/server/http";
+import { paymentFields, normalizePayment } from "@/modules/finances/payment";
 const schema = z.object({
+  ...paymentFields,
   direction: z.enum(["INCOME", "EXPENSE"]),
   amount: moneySchema.refine((value) => Number(value) > 0),
   bookedAt: z.string().date(),
@@ -17,7 +19,9 @@ export async function PATCH(
   try {
     requireSameOrigin(request);
     const user = await requireDriveUser();
-    const data = schema.parse(Object.fromEntries(await request.formData()));
+    const data = normalizePayment(
+      schema.parse(Object.fromEntries(await request.formData())),
+    );
     const result = await getDb().transaction.updateMany({
       where: {
         id: (await context.params).id,

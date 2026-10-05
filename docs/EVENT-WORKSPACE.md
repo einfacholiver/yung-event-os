@@ -31,6 +31,12 @@ Die App reserviert fünf von Google generierte Ordner-IDs in einem ActivityLog, 
 
 Das Anlegen echter Google-Ordner muss nach Bestätigung der zusätzlichen OAuth-Freigabe einmal in der Anwendung geprüft werden. Automatisierte Prüfungen verwenden simulierte Google-Antworten, damit Tests keine echten Veranstaltungsordner erzeugen.
 
+## Zahlungsstatus und Chapter-Four-Übernahme
+
+Buchungen haben jetzt „Bereits bezahlt / eingegangen“ und „Bezahlt von“ (Oliver, Daniel, Konto, PayPal). Bereits übernommene abweichende Quellbezeichnungen bleiben auswählbar. Beim Entfernen des Häkchens wird die Zahlerzuordnung geleert. Ausgaben werden für das Event insgesamt gerechnet, unabhängig davon, ob sie bezahlt sind; private Auslagen werden durch eine spätere Erstattung nicht nochmals zur Ausgabe.
+
+Am 5. Oktober wurden für Chapter Four 35 positive Ausgaben aus KOSTEN!A17:C55 der bereitgestellten Chapter_Four_Kosten.xlsx mit zusammen 10.102 EUR übernommen. Vier entfallene Positionen mit 0 EUR wurden ausgelassen. Die Summenzeile C63 zeigt nur 9.252 EUR, weil dort die 850 EUR aus B17 fehlen. Eingetragen wurden außerdem die vom Nutzer angegebenen Sponsorings (200 EUR Blacksmith Tattoo Studio, 100 EUR Melle Beauty, 1.250 EUR AVP Autoland). Keine Ticketeinnahmen wurden übernommen. Die ursprünglichen Zahlungsstatus wurden beibehalten. „Ecki“ wird bis zur Identitätsklärung nicht automatisch als Daniel interpretiert. Sponsor-Zahlungseingänge sind noch nicht bestätigt. Mangels Einzelbuchungsdaten wurde das Eventdatum als Buchungsdatum verwendet; Quellzeilen und Annahmen stehen im ActivityLog.
+
 ## Technische Prüfung
 
-`npm run db:deploy` wendet die additive TicketOrder-Migration an. Danach `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` und `npm start`. Auth.js und die vorhandenen Ordnerzuordnungen bleiben bestehen. Ticketimporte laufen atomar in einer Transaktion und haben einen eindeutigen Schlüssel aus Event und Bestellnummer.
+`npm run db:deploy` wendet die additiven Migrationen für TicketOrder und Zahlungsstatus an. Danach `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` und `npm start`. Auth.js und die vorhandenen Ordnerzuordnungen bleiben bestehen. Ticketimporte laufen atomar in einer Transaktion und haben einen eindeutigen Schlüssel aus Event und Bestellnummer.
