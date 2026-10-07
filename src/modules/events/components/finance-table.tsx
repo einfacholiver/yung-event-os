@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { cents, euro, financeTotals } from "@/modules/events/finance";
 import { paymentSources } from "@/modules/finances/payment";
-import { ApiForm } from "@/modules/workspace/components/api-form";
-import { FinanceFields } from "./finance-fields";
-import { DeleteTransaction } from "./delete-transaction";
+import { TransactionEditor } from "./transaction-editor";
 import {
   TransactionInvoice,
   type InvoiceDocument,
@@ -66,6 +64,8 @@ export function FinanceTable({
   const [search, setSearch] = useState("");
   const [invoiceFilter, setInvoiceFilter] = useState("");
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingRow = rows.find((row) => row.id === editingId);
   const payers = [
     ...new Set([
       ...paymentSources,
@@ -296,25 +296,13 @@ export function FinanceTable({
                 )}
                 <td className="p-3">
                   {row.currency === "EUR" && (
-                    <details>
-                      <summary className="cursor-pointer">Bearbeiten</summary>
-                      <ApiForm
-                        method="PATCH"
-                        reset={false}
-                        endpoint={`/api/finances/transactions/${row.id}`}
-                        className="min-w-64 space-y-3 p-3"
-                      >
-                        <FinanceFields row={row} />
-                      </ApiForm>
-                      <DeleteTransaction
-                        id={row.id}
-                        description={row.description}
-                        amount={row.amount}
-                        onDeleted={() =>
-                          setDeletedIds((previous) => [...previous, row.id])
-                        }
-                      />
-                    </details>
+                    <button
+                      type="button"
+                      className="rounded border px-3 py-2"
+                      onClick={() => setEditingId(row.id)}
+                    >
+                      Bearbeiten
+                    </button>
                   )}
                 </td>
               </tr>
@@ -329,6 +317,16 @@ export function FinanceTable({
           </p>
         )}
       </div>
+      {editingRow && (
+        <TransactionEditor
+          key={editingRow.id}
+          row={editingRow}
+          onClose={() => setEditingId(null)}
+          onDeleted={() =>
+            setDeletedIds((previous) => [...previous, editingRow.id])
+          }
+        />
+      )}
     </div>
   );
 }
