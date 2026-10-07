@@ -8,14 +8,16 @@ export async function EventTickets({
   id: string;
   organizationId: string;
 }) {
-  const salesItems = await getDb().ticketSalesItem.findMany({
-    where: { eventId: id, organizationId },
-    orderBy: { position: "asc" },
-  });
-  const orders = await getDb().ticketOrder.findMany({
-    where: { eventId: id, organizationId },
-    orderBy: { orderNumber: "asc" },
-  });
+  const [salesItems, orders] = await Promise.all([
+    getDb().ticketSalesItem.findMany({
+      where: { eventId: id, organizationId },
+      orderBy: { position: "asc" },
+    }),
+    getDb().ticketOrder.findMany({
+      where: { eventId: id, organizationId },
+      orderBy: { orderNumber: "asc" },
+    }),
+  ]);
   return (
     <section className="space-y-6">
       <h2 className="text-2xl font-semibold">Tickets</h2>

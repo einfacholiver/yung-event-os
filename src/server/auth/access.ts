@@ -1,5 +1,6 @@
 import "server-only";
 import type { Session } from "next-auth";
+import { cache } from "react";
 import { auth } from "@/server/auth";
 import { getDb } from "@/server/db/client";
 import { redirect } from "next/navigation";
@@ -34,9 +35,10 @@ export async function verifyAdminSession(session: Session | null) {
   return { userId: user.id, organizationId: user.organizationId };
 }
 
-export async function requireAdmin() {
+// React memoizes only within a server render, never across users or requests.
+export const requireAdmin = cache(async () => {
   return verifyAdminSession(await auth());
-}
+});
 
 export async function requireAdminPage() {
   try {

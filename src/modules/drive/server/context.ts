@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { AccessError, requireAdmin } from "@/server/auth/access";
 import { getDb } from "@/server/db/client";
 import { DRIVE_ACCOUNT_EMAIL } from "../config";
@@ -17,7 +18,7 @@ export async function requireDriveUser() {
   }
 }
 
-export async function getDriveConnection() {
+export const getDriveConnection = cache(async () => {
   const context = await requireDriveUser();
   const connection = await getDb().driveConnection.findUnique({
     where: {
@@ -37,4 +38,4 @@ export async function getDriveConnection() {
   )
     throw new DriveError("RECONNECT", 401);
   return { ...context, connection, account: connection.googleAccount };
-}
+});

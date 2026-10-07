@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { ApiForm } from "@/modules/workspace/components/api-form";
 import { PdfPreview } from "@/modules/documents/components/pdf-preview";
 
@@ -25,6 +26,7 @@ export function TransactionInvoice({
   document?: InvoiceDocument | null;
   documents: InvoiceDocument[];
 }) {
+  const [expanded, setExpanded] = useState(false);
   const available = documents.filter(
     (file) =>
       file.category === (direction === "EXPENSE" ? "EXPENSES" : "INCOME"),
@@ -58,48 +60,50 @@ export function TransactionInvoice({
           )}
         </>
       )}
-      <details>
+      <details onToggle={(event) => setExpanded(event.currentTarget.open)}>
         <summary className="cursor-pointer text-sm">
           {document ? "Verknüpfung ändern" : "Rechnung zuordnen"}
         </summary>
-        <ApiForm
-          key={document?.id ?? "none"}
-          endpoint={`/api/finances/transactions/${id}/invoice`}
-          method="PATCH"
-          reset={false}
-          className="mt-3 space-y-3"
-        >
-          <label className="block text-sm">
-            Rechnung aus diesem Event
-            <select
-              className="bg-card mt-1 block w-full max-w-lg rounded border p-2"
-              name="driveItemId"
-              defaultValue={document?.id ?? ""}
-            >
-              <option value="">Keine Rechnung / Verknüpfung entfernen</option>
-              {document &&
-                !available.some((file) => file.id === document.id) && (
-                  <option value={document.id}>
-                    {document.name} (bisherige Zuordnung)
+        {expanded && (
+          <ApiForm
+            key={document?.id ?? "none"}
+            endpoint={`/api/finances/transactions/${id}/invoice`}
+            method="PATCH"
+            reset={false}
+            className="mt-3 space-y-3"
+          >
+            <label className="block text-sm">
+              Rechnung aus diesem Event
+              <select
+                className="bg-card mt-1 block w-full max-w-lg rounded border p-2"
+                name="driveItemId"
+                defaultValue={document?.id ?? ""}
+              >
+                <option value="">Keine Rechnung / Verknüpfung entfernen</option>
+                {document &&
+                  !available.some((file) => file.id === document.id) && (
+                    <option value={document.id}>
+                      {document.name} (bisherige Zuordnung)
+                    </option>
+                  )}
+                {available.map((file) => (
+                  <option key={file.id} value={file.id}>
+                    {file.path}
                   </option>
-                )}
-              {available.map((file) => (
-                <option key={file.id} value={file.id}>
-                  {file.path}
-                </option>
-              ))}
-            </select>
-          </label>
-          {!available.length && (
-            <p className="text-muted-foreground text-xs">
-              Noch keine passenden Rechnungen. Unter Dokumente hochladen oder
-              Drive synchronisieren.
-            </p>
-          )}
-          <button className="bg-primary text-primary-foreground rounded px-3 py-2">
-            Verknüpfung speichern
-          </button>
-        </ApiForm>
+                ))}
+              </select>
+            </label>
+            {!available.length && (
+              <p className="text-muted-foreground text-xs">
+                Noch keine passenden Rechnungen. Unter Dokumente hochladen oder
+                Drive synchronisieren.
+              </p>
+            )}
+            <button className="bg-primary text-primary-foreground rounded px-3 py-2">
+              Verknüpfung speichern
+            </button>
+          </ApiForm>
+        )}
       </details>
     </div>
   );

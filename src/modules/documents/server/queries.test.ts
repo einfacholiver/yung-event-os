@@ -91,3 +91,21 @@ it("does not assign a folder mapped to conflicting events", async () => {
     ]);
   expect((await getDocuments("four")).documents).toEqual([]);
 });
+it("starts the event, file and folder reads in parallel instead of waiting for the file response", async () => {
+  let resolveFiles!: (value: unknown[]) => void;
+  mocks.files
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFiles = resolve;
+        }),
+    )
+    .mockResolvedValueOnce([]);
+  const pending = getDocuments("four");
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(mocks.events).toHaveBeenCalledTimes(1);
+  expect(mocks.files).toHaveBeenCalledTimes(2);
+  resolveFiles([]);
+  expect((await pending).documents).toEqual([]);
+});

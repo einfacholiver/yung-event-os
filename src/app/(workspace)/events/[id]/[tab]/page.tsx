@@ -14,7 +14,6 @@ import {
   enableDrivePreviews,
   enableDocumentUploads,
 } from "@/modules/drive/actions";
-import { getDb } from "@/server/db/client";
 import { DocumentUpload } from "@/modules/documents/components/document-upload";
 import { MediaPreview } from "@/modules/events/components/media-preview";
 import { PdfPreview } from "@/modules/documents/components/pdf-preview";
@@ -43,8 +42,8 @@ export default async function EventSection({
         analytics={slug === "analytics"}
       />
     );
-  const { documents } = await getDocuments(id);
-  const driveContext = await getDriveConnection();
+  const [{ documents, folders: cachedFolders }, driveContext] =
+    await Promise.all([getDocuments(id), getDriveConnection()]);
   const previewEnabled = hasDriveContentScope(driveContext.account.scope);
   const { category, mediaType: requestedMediaType } = await searchParams;
   const uploadSection =
@@ -60,30 +59,20 @@ export default async function EventSection({
           ? [category]
           : ["INCOME", "EXPENSES"];
   const uploadMappings = uploadSection
-    ? await getDb().driveFolderMapping.findMany({
-        where: {
-          eventId: id,
-          organizationId: user.organizationId,
-          purpose: { in: uploadPurposes },
-          driveItem: {
-            connectionId: driveContext.connection.id,
-            trashed: false,
-          },
-        },
-        include: { driveItem: { select: { name: true, externalId: true } } },
-        orderBy: { purpose: "asc" },
-      })
-    : [];
-  const cachedFolders = uploadMappings.length
-    ? await getDb().driveItem.findMany({
-        where: {
-          organizationId: user.organizationId,
-          connectionId: driveContext.connection.id,
-          kind: "FOLDER",
-          trashed: false,
-        },
-        select: { externalId: true, parentExternalId: true, name: true },
-      })
+    ? cachedFolders
+        .flatMap((folder) =>
+          folder.folderMappings
+            .filter(
+              (mapping) =>
+                mapping.eventId === id &&
+                uploadPurposes.some((purpose) => purpose === mapping.purpose),
+            )
+            .map((mapping) => ({
+              purpose: mapping.purpose,
+              driveItem: folder,
+            })),
+        )
+        .sort((a, b) => a.purpose.localeCompare(b.purpose))
     : [];
   const foldersById = new Map(
     cachedFolders.map((folder) => [folder.externalId, folder]),

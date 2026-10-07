@@ -41,7 +41,7 @@ function descriptions() {
     .slice(1)
     .map((row) => within(row).getAllByRole("cell")[1].textContent);
 }
-it("shows linked invoice status, the complete document path and filters missing invoices", () => {
+it("shows linked invoice status, lazily loads selection paths and filters missing invoices", async () => {
   const document = {
     id: "pdf",
     name: "Technik.pdf",
@@ -62,7 +62,13 @@ it("shows linked invoice status, the complete document path and filters missing 
     "href",
     "https://drive.google.com/file/d/drive-pdf/view",
   );
-  expect(screen.getAllByRole("option", { name: document.path }).length).toBe(2);
+  expect(
+    screen.queryByRole("option", { name: document.path }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText("Verknüpfung ändern"));
+  expect(
+    await screen.findByRole("option", { name: document.path }),
+  ).toBeInTheDocument();
   fireEvent.change(screen.getByRole("combobox", { name: /^Rechnung$/ }), {
     target: { value: "missing" },
   });

@@ -13,9 +13,10 @@ function normalize(value: string) {
 
 export async function getDocuments(eventId?: string) {
   const context = await getDriveConnection();
-  if (!context.connection.rootFolderId) return { events: [], documents: [] };
+  if (!context.connection.rootFolderId)
+    return { events: [], documents: [], folders: [] };
   const db = getDb();
-  const [events, items] = await Promise.all([
+  const [events, items, folders] = await Promise.all([
     db.event.findMany({
       where: { organizationId: context.organizationId },
       orderBy: { createdAt: "asc" },
@@ -39,24 +40,28 @@ export async function getDocuments(eventId?: string) {
         webViewUrl: true,
       },
     }),
-  ]);
-  const folders = await db.driveItem.findMany({
-    where: {
-      organizationId: context.organizationId,
-      connectionId: context.connection.id,
-      kind: "FOLDER",
-      trashed: false,
-    },
-    select: {
-      externalId: true,
-      parentExternalId: true,
-      name: true,
-      folderMappings: {
-        where: { organizationId: context.organizationId },
-        select: { eventId: true, purpose: true },
+    db.driveItem.findMany({
+      where: {
+        organizationId: context.organizationId,
+        connectionId: context.connection.id,
+        kind: "FOLDER",
+        trashed: false,
       },
-    },
-  });
+      select: {
+        externalId: true,
+        parentExternalId: true,
+        name: true,
+        folderMappings: {
+          where: { organizationId: context.organizationId },
+          select: { eventId: true, purpose: true },
+        },
+      },
+    }),
+  ]);
+  const foldersById = new Map(
+    folders.map((folder) => [folder.externalId, folder]),
+  );
+  const eventsById = new Map(events.map((event) => [event.id, event]));
   const byExternalId = new Map(
     [...folders, ...items].map((item) => [item.externalId, item]),
   );
@@ -70,13 +75,10 @@ export async function getDocuments(eventId?: string) {
       visited.add(current);
       const folder = byExternalId.get(current);
       if (!folder) break;
-      const explicit =
-        folders.find((candidate) => candidate.externalId === current)
-          ?.folderMappings ?? [];
+      const explicit = foldersById.get(current)?.folderMappings ?? [];
       const eventIds = new Set(explicit.map((mapping) => mapping.eventId));
       if (eventIds.size > 1) return undefined;
-      if (eventIds.size === 1)
-        return events.find((event) => event.id === explicit[0].eventId);
+      if (eventIds.size === 1) return eventsById.get(explicit[0].eventId);
       if (folder.parentExternalId === context.connection.rootFolderId)
         return events.find(
           (event) => normalize(event.name) === normalize(folder.name),
@@ -108,7 +110,7 @@ export async function getDocuments(eventId?: string) {
       const visited = new Set<string>();
       while (current && !visited.has(current)) {
         visited.add(current);
-        const folder = folders.find((entry) => entry.externalId === current);
+        const folder = foldersById.get(current);
         if (!folder) break;
         const mappings = folder.folderMappings.filter(
           (mapping) => mapping.eventId === event?.id,
@@ -123,5 +125,5 @@ export async function getDocuments(eventId?: string) {
       return { ...item, path: pathFor(item), event, category };
     })
     .filter((item) => !eventId || item.event?.id === eventId);
-  return { events, documents, eventRoots };
+  return { events, documents, eventRoots, folders };
 }

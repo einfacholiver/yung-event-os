@@ -14,12 +14,14 @@ export async function EventFinances({
   organizationId: string;
   analytics?: boolean;
 }) {
-  const transactions = await getDb().transaction.findMany({
-    where: { eventId: id, organizationId },
-    orderBy: [{ bookedAt: "desc" }, { id: "asc" }],
-    include: { invoice: { include: { driveItem: true } } },
-  });
-  const { documents } = analytics ? { documents: [] } : await getDocuments(id);
+  const [transactions, { documents }] = await Promise.all([
+    getDb().transaction.findMany({
+      where: { eventId: id, organizationId },
+      orderBy: [{ bookedAt: "desc" }, { id: "asc" }],
+      include: { invoice: { include: { driveItem: true } } },
+    }),
+    analytics ? Promise.resolve({ documents: [] }) : getDocuments(id),
+  ]);
   const rows = transactions.map((row) => ({
     id: row.id,
     direction: row.direction,
