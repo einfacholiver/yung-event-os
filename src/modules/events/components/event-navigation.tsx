@@ -18,7 +18,7 @@ export function EventNavigation({ eventId }: { eventId: string }) {
               href={href}
               aria-current={active ? "page" : undefined}
               className={
-                "border-b-2 px-4 py-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-4px] " +
+                "event-tab border-b-2 px-4 py-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-4px] " +
                 (active
                   ? "border-primary bg-primary/5 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:border-primary/40 border-transparent")

@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
+    // Avoid simultaneous worker cold starts overwhelming a Windows/network drive.
+    maxWorkers: 4,
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "tests/database/**/*.test.ts"],

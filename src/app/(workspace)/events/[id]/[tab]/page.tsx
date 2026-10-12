@@ -17,13 +17,18 @@ import {
 import { DocumentUpload } from "@/modules/documents/components/document-upload";
 import { MediaPreview } from "@/modules/events/components/media-preview";
 import { PdfPreview } from "@/modules/documents/components/pdf-preview";
+import { paginateDocuments } from "@/modules/documents/pagination";
 export const dynamic = "force-dynamic";
 export default async function EventSection({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string; tab: string }>;
-  searchParams: Promise<{ category?: string; mediaType?: string | string[] }>;
+  searchParams: Promise<{
+    category?: string;
+    mediaType?: string | string[];
+    page?: string | string[];
+  }>;
 }) {
   const { id, tab: slug } = await params;
   if (slug === "invoices") redirect(`/events/${id}/documents`);
@@ -45,7 +50,11 @@ export default async function EventSection({
   const [{ documents, folders: cachedFolders }, driveContext] =
     await Promise.all([getDocuments(id), getDriveConnection()]);
   const previewEnabled = hasDriveContentScope(driveContext.account.scope);
-  const { category, mediaType: requestedMediaType } = await searchParams;
+  const {
+    category,
+    mediaType: requestedMediaType,
+    page: requestedPage,
+  } = await searchParams;
   const uploadSection =
     slug === "documents" || slug === "media" || slug === "permissions"
       ? slug
@@ -114,6 +123,17 @@ export default async function EventSection({
           ? file.category === category
           : true,
   );
+  const pagination = paginateDocuments(filtered, requestedPage);
+  const pageHref = (page: number) => {
+    const query = new URLSearchParams({ page: String(page) });
+    if (
+      slug === "documents" &&
+      (category === "INCOME" || category === "EXPENSES")
+    )
+      query.set("category", category);
+    if (slug === "media" && mediaType) query.set("mediaType", mediaType);
+    return `/events/${encodeURIComponent(id)}/${slug}?${query}`;
+  };
   return (
     <section className="space-y-5">
       <h2 className="text-2xl font-semibold">{tab.label}</h2>
@@ -226,7 +246,7 @@ export default async function EventSection({
             : "divide-y rounded-xl border"
         }
       >
-        {filtered.map((file) => (
+        {pagination.items.map((file) => (
           <div
             className="hover:bg-secondary block rounded-lg p-4"
             key={file.id}
@@ -268,6 +288,36 @@ export default async function EventSection({
           </div>
         ))}
       </div>
+      {pagination.pages > 1 && (
+        <nav
+          aria-label="Dateiseiten"
+          className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm"
+        >
+          <p>
+            {pagination.offset + 1}–
+            {pagination.offset + pagination.items.length} von {filtered.length}{" "}
+            Dateien · Seite {pagination.page} von {pagination.pages}
+          </p>
+          <div className="flex gap-3">
+            {pagination.page > 1 && (
+              <Link
+                className="rounded border px-4 py-2"
+                href={pageHref(pagination.page - 1)}
+              >
+                Zurück
+              </Link>
+            )}
+            {pagination.page < pagination.pages && (
+              <Link
+                className="bg-primary text-primary-foreground rounded px-4 py-2"
+                href={pageHref(pagination.page + 1)}
+              >
+                Weitere Dateien
+              </Link>
+            )}
+          </div>
+        </nav>
+      )}
       {!filtered.length && (
         <p className="rounded-xl border border-dashed p-8">
           {slug === "media" && mediaType && mediaFiles.length

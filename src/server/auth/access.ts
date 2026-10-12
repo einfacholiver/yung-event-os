@@ -14,22 +14,20 @@ export class AccessError extends Error {
 
 export async function verifyAdminSession(session: Session | null) {
   if (!session?.user?.id) throw new AccessError(401);
-  const user = await getDb().user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      organization: true,
-      accounts: { select: { provider: true, providerAccountId: true } },
+  // Let PostgreSQL check the relationships with EXISTS in one query instead
+  // of loading organization/account records in separate round trips.
+  const user = await getDb().user.findFirst({
+    where: {
+      id: session.user.id,
+      email: ADMIN_EMAIL,
+      organization: { slug: "yung" },
+      accounts: {
+        some: { provider: "google", providerAccountId: { not: "" } },
+      },
     },
+    select: { id: true, organizationId: true },
   });
-  if (
-    !user ||
-    user.email !== ADMIN_EMAIL ||
-    !user.organizationId ||
-    user.organization?.slug !== "yung" ||
-    !user.accounts.some(
-      (account) => account.provider === "google" && !!account.providerAccountId,
-    )
-  ) {
+  if (!user || !user.organizationId) {
     throw new AccessError(403);
   }
   return { userId: user.id, organizationId: user.organizationId };

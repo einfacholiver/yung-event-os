@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/server/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/server/db/client", () => ({
   getDb: () => ({
-    user: { findUnique: mocks.user },
+    user: { findFirst: mocks.user },
     driveConnection: { findUnique: mocks.connection },
   }),
 }));
@@ -34,12 +34,7 @@ it("rejects unauthenticated access before database queries", async () => {
   expect(mocks.user).not.toHaveBeenCalled();
 });
 it("rejects a different account before querying connections", async () => {
-  mocks.user.mockResolvedValue({
-    id: "user",
-    email: "other@example.com",
-    organizationId: "org",
-    organization: { slug: "yung" },
-  });
+  mocks.user.mockResolvedValue(null);
   await expect(getDriveConnection()).rejects.toMatchObject({
     code: "FORBIDDEN",
   });

@@ -51,6 +51,7 @@ beforeEach(() => {
   m.transaction.mockImplementation((callback) =>
     callback({
       $queryRaw: m.lock,
+      $executeRaw: m.lock,
       transaction: { findFirst: m.find, update: m.update },
       invoice: { findFirst: m.invoiceFind, create: m.create },
       activityLog: { create: m.log },

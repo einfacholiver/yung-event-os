@@ -172,6 +172,7 @@
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
@@ -183,6 +184,10 @@
     box-shadow: 0 8px 30px #00000018;
     position: relative;
     overflow: hidden;
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
   }
   .event-card::before {
     content: "";
@@ -192,7 +197,7 @@
     background: linear-gradient(90deg, #fa754d, #fa754d00);
     opacity: 0.45;
   }
-  .event-card:hover {
+  a.event-card:hover {
     border-color: #fa754d66;
     box-shadow:
       0 12px 40px #00000035,
@@ -204,6 +209,81 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: 0 8px 24px #00000018;
+    background-image: linear-gradient(135deg, #fa754d08, transparent 65%);
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+  .metric-card:hover {
+    border-color: #fa754d55;
+    box-shadow: 0 12px 28px #00000025;
+  }
+  .event-tab {
+    position: relative;
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+  .event-tab::after {
+    content: "";
+    position: absolute;
+    right: 1rem;
+    bottom: 0.5rem;
+    left: 1rem;
+    height: 2px;
+    border-radius: 1rem;
+    background: var(--primary);
+    opacity: 0;
+    transform: scaleX(0.5);
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease;
+  }
+  .event-tab[aria-current="page"]::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  .workspace-dialog {
+    box-shadow:
+      0 28px 90px #00000080,
+      0 0 0 1px #fa754d18;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .workspace-transition {
+      animation: workspace-enter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .workspace-dialog[open] {
+      animation: dialog-enter 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .workspace-dialog[open]::backdrop {
+      animation: backdrop-enter 180ms ease-out;
+    }
+    .sync-notification {
+      animation: workspace-enter 240ms ease-out;
+    }
+    a.event-card {
+      animation: card-enter 320ms ease-out backwards;
+    }
+    a.event-card:nth-child(2) {
+      animation-delay: 35ms;
+    }
+    a.event-card:nth-child(3) {
+      animation-delay: 70ms;
+    }
+    a.event-card:nth-child(4) {
+      animation-delay: 105ms;
+    }
+    a.event-card:nth-child(n + 5) {
+      animation-delay: 140ms;
+    }
+    button:not(:disabled):active {
+      transform: translateY(1px);
+    }
+    details[open] > form {
+      animation: workspace-enter 180ms ease-out;
+    }
+    form p.status-success,
+    form p.status-error {
+      animation: workspace-enter 180ms ease-out;
+    }
   }
   .status-success {
     color: var(--foreground);
@@ -224,5 +304,46 @@
     color: var(--foreground);
     background: #ef444415;
     border: 1px solid #ef444440;
+  }
+}
+
+@keyframes workspace-enter {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

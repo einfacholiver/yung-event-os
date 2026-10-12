@@ -26,15 +26,16 @@ export function TransactionEditor({
   const titleId = useId();
   useEffect(() => {
     const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
+    if (element && !element.open) element.showModal();
+    // Removing a native dialog also removes it from the top layer. Calling
+    // close() during Strict Mode's effect replay would emit a false close.
   }, []);
   return (
     <dialog
       ref={dialog}
       aria-labelledby={titleId}
       onClose={onClose}
-      className="bg-card text-foreground m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border p-5 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:p-6"
+      className="workspace-dialog bg-card text-foreground m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border p-5 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:p-6"
     >
       <header className="mb-5 flex items-start justify-between gap-4">
         <div className="min-w-0">

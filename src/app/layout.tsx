@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "YUNG Event OS",
-  description: "Technische Grundlage für YUNG Event OS",
+  description: "Events, Finanzen und Drive-Dokumente gemeinsam verwalten.",
 };
 
 export default function RootLayout({

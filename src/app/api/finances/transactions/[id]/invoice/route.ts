@@ -46,6 +46,15 @@ export async function PATCH(
       let invoiceId: string | null = null;
       if (document) {
         const direction = row.direction === "EXPENSE" ? "INCOMING" : "OUTGOING";
+        // Different bookings can link the same file at the same moment.
+        // Serialize invoice creation by document so both reuse one Invoice.
+        const invoiceKey = JSON.stringify([
+          user.organizationId,
+          row.eventId,
+          document.id,
+          direction,
+        ]);
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${invoiceKey}, 0))`;
         const existing = await tx.invoice.findFirst({
           where: {
             organizationId: user.organizationId,

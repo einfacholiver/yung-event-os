@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { FinanceTable } from "./finance-table";
+import { StrictMode } from "react";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 beforeEach(() => {
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
@@ -32,7 +33,11 @@ const row = {
   paidBy: "Oliver",
 };
 it("opens editing outside the scrolling table and keeps all fields and deletion available", () => {
-  render(<FinanceTable rows={[row]} />);
+  render(
+    <StrictMode>
+      <FinanceTable rows={[row]} />
+    </StrictMode>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
   const dialog = screen.getByRole("dialog", { name: "Buchung bearbeiten" });
   expect(dialog.closest("table")).toBeNull();

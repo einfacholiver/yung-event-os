@@ -22,6 +22,11 @@ export function mutationError(error: unknown) {
         ? "Kein Zugriff auf diese Anfrage."
         : status === 400
           ? "Bitte Eingaben prüfen."
-          : "Speichern fehlgeschlagen. Bitte erneut versuchen.";
-  return NextResponse.json({ error: message }, { status });
+          : status === 404
+            ? "Datensatz oder Dokument nicht gefunden."
+            : "Speichern fehlgeschlagen. Bitte erneut versuchen.";
+  return NextResponse.json(
+    { error: message },
+    { status, headers: { "Cache-Control": "no-store" } },
+  );
 }

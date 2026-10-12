@@ -87,7 +87,7 @@ export function DriveSyncProvider({ children }: { children: React.ReactNode }) {
       {state && (
         <aside
           aria-label="Google Drive Sync"
-          className="bg-card text-foreground fixed right-4 bottom-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border p-4 shadow-2xl sm:right-6 sm:bottom-6"
+          className="sync-notification bg-card text-foreground fixed right-4 bottom-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border p-4 shadow-2xl sm:right-6 sm:bottom-6"
         >
           <div
             role={state.status === "error" ? "alert" : "status"}

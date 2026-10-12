@@ -13,6 +13,7 @@ export function MediaPreview({ src, name }: { src: string; name: string }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       loading="lazy"
+      decoding="async"
       src={src}
       alt={name}
       className="mb-3 aspect-square w-full rounded object-contain"

@@ -129,14 +129,19 @@ export async function EventFinances({
           <FinanceTable
             rows={rows}
             eventId={id}
-            documents={documents.map((file) => ({
-              id: file.id,
-              name: file.name,
-              path: file.path,
-              category: file.category,
-              mimeType: file.mimeType,
-              externalId: file.externalId,
-            }))}
+            documents={documents
+              .filter(
+                (file) =>
+                  file.category === "INCOME" || file.category === "EXPENSES",
+              )
+              .map((file) => ({
+                id: file.id,
+                name: file.name,
+                path: file.path,
+                category: file.category,
+                mimeType: file.mimeType,
+                externalId: file.externalId,
+              }))}
           />
           <Link className="underline" href={`/events/${id}/documents`}>
             Vorhandene Rechnungen und Kostenübersichten öffnen
