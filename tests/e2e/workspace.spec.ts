@@ -62,6 +62,69 @@ test.describe("authenticated workspace review", () => {
       await expect(
         page.getByRole("heading", { name: "Finanzen", exact: true }),
       ).toBeVisible();
+      const region = page.getByRole("region", {
+        name: "Buchungen",
+        exact: true,
+      });
+      const editButtons = region.getByRole("button", {
+        name: "Bearbeiten",
+        exact: true,
+      });
+      const count = await editButtons.count();
+      expect(count).toBeGreaterThan(0);
+      for (const width of [390, 768, 1024, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const index of [
+          ...new Set([0, Math.floor(count / 2), count - 1]),
+        ]) {
+          const button = editButtons.nth(index);
+          // Only scroll the document vertically. Never let Playwright move
+          // the table horizontally to mask a clipped action column.
+          await button.evaluate((element) =>
+            window.scrollTo({
+              top:
+                window.scrollY +
+                (element.closest("tr") ?? element).getBoundingClientRect().top -
+                (document.querySelector("header")?.getBoundingClientRect()
+                  .height ?? 0) -
+                24,
+              behavior: "instant",
+            }),
+          );
+          await expect(button).toBeInViewport();
+          const box = await button.boundingBox();
+          expect(box!.x).toBeGreaterThanOrEqual(0);
+          expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+          expect(box!.y).toBeGreaterThanOrEqual(
+            await page
+              .locator("header")
+              .first()
+              .evaluate((element) => element.getBoundingClientRect().bottom),
+          );
+          expect(await region.evaluate((element) => element.scrollLeft)).toBe(
+            0,
+          );
+          if (width === 390 && index === 0)
+            await page.screenshot({
+              path: "test-results/finance-table-mobile.png",
+              animations: "disabled",
+            });
+        }
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth),
+        ).toBeLessThanOrEqual(width);
+      }
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await region.evaluate((element) =>
+        window.scrollTo({
+          top: window.scrollY + element.getBoundingClientRect().top - 140,
+          behavior: "instant",
+        }),
+      );
+      await page.screenshot({
+        path: "test-results/finance-table-desktop.png",
+        animations: "disabled",
+      });
       await page
         .getByRole("button", { name: "Bearbeiten", exact: true })
         .first()

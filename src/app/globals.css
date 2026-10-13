@@ -347,3 +347,77 @@
     opacity: 1;
   }
 }
+
+/* Keep actions visible even when a desktop table needs horizontal scrolling. */
+.finance-table {
+  min-width: 58rem;
+}
+.finance-table td {
+  overflow-wrap: anywhere;
+}
+.finance-table td[data-label="Datum"] {
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+.finance-actions {
+  box-shadow: -8px 0 12px -8px #00000070;
+}
+.finance-actions button {
+  white-space: nowrap;
+}
+@media (max-width: 1023px) {
+  .finance-scroll {
+    overflow-x: visible;
+    border: 0;
+  }
+  .finance-table {
+    display: block;
+    min-width: 0;
+    background: transparent;
+  }
+  .finance-table colgroup,
+  .finance-table thead {
+    display: none;
+  }
+  .finance-table tbody {
+    display: grid;
+    gap: 1rem;
+  }
+  .finance-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .finance-table td {
+    display: block;
+    min-width: 0;
+    padding: 0.65rem;
+  }
+  .finance-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .finance-description,
+  .finance-invoice,
+  .finance-table td.finance-actions {
+    grid-column: 1 / -1;
+  }
+  .finance-description {
+    grid-row: 1;
+  }
+  .finance-table td.finance-actions {
+    grid-row: 2;
+    position: static;
+    box-shadow: none;
+  }
+  .finance-actions button {
+    width: 100%;
+  }
+}

@@ -32,7 +32,7 @@ export function TransactionInvoice({
       file.category === (direction === "EXPENSE" ? "EXPENSES" : "INCOME"),
   );
   return (
-    <div className="min-w-56 space-y-2">
+    <div className="min-w-0 space-y-2">
       <span
         className={`inline-block rounded-full px-2 py-1 text-xs ${document && !document.trashed ? "status-success" : "status-warning"}`}
       >
@@ -45,7 +45,7 @@ export function TransactionInvoice({
       {document && (
         <>
           <a
-            className="block text-sm underline"
+            className="block text-sm break-all underline"
             href={`https://drive.google.com/file/d/${encodeURIComponent(document.externalId)}/view`}
             target="_blank"
             rel="noopener noreferrer"
@@ -75,7 +75,7 @@ export function TransactionInvoice({
             <label className="block text-sm">
               Rechnung aus diesem Event
               <select
-                className="bg-card mt-1 block w-full max-w-lg rounded border p-2"
+                className="bg-card mt-1 block w-full max-w-lg min-w-0 rounded border p-2"
                 name="driveItemId"
                 defaultValue={document?.id ?? ""}
               >

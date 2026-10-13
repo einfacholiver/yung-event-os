@@ -2,6 +2,8 @@
 
 ## Buchungen
 
+Die Bearbeiten-Spalte bleibt am rechten Rand der Finanz-Tabelle sichtbar, auch wenn die übrigen Spalten horizontal gescrollt werden. Lange Rechnungsnamen umbrechen innerhalb ihrer Spalte. Auf Bildschirmen unter 1024 Pixeln erscheinen Buchungen als Karten; „Bearbeiten“ steht direkt unter der Beschreibung. Sortierung und Filter bleiben dort über die Auswahlfelder verfügbar.
+
 Unter Event → Finanzen öffnet **Bearbeiten** ein modales Fenster außerhalb der Tabelle. Es passt sich der Bildschirmbreite an und scrollt auf kleinen Bildschirmen innerhalb des Fensters. Speichern und Löschen bleiben erreichbar. **Schließen** oder Escape schließen die Maske. Die bestehenden Finanz- und Rechnungsdaten bleiben unverändert.
 
 ## Google Drive synchronisieren

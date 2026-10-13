@@ -205,8 +205,57 @@ export function FinanceTable({
         {euro(filteredTotals.expenses)}. Die Kennzahlen oben zeigen weiterhin
         das gesamte Event.
       </p>
-      <div className="overflow-auto rounded-xl border">
-        <table className="w-full text-left text-sm">
+      <div className="flex flex-wrap items-end gap-3 lg:hidden">
+        <label className="min-w-0 flex-1">
+          Sortieren nach
+          <select
+            className={style}
+            value={sort.key}
+            onChange={(event) =>
+              setSort((previous) => ({
+                ...previous,
+                key: event.target.value as SortKey,
+              }))
+            }
+          >
+            {columns.map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="rounded border px-3 py-2 text-sm"
+          aria-label="Sortierrichtung umkehren"
+          onClick={() =>
+            setSort((previous) => ({
+              ...previous,
+              descending: !previous.descending,
+            }))
+          }
+        >
+          {sort.descending ? "Absteigend ↓" : "Aufsteigend ↑"}
+        </button>
+      </div>
+      <div
+        role="region"
+        aria-label="Buchungen"
+        tabIndex={0}
+        className="finance-scroll overflow-x-auto rounded-xl border"
+      >
+        <table className="finance-table w-full table-fixed text-left text-sm">
+          <colgroup>
+            <col className="w-[10%]" />
+            <col className="w-[18%]" />
+            <col className="w-[8%]" />
+            <col className="w-[8%]" />
+            <col className="w-[13%]" />
+            <col className="w-[10%]" />
+            {eventId && <col className="w-[20%]" />}
+            <col className="w-[13%]" />
+          </colgroup>
           <caption className="sr-only">
             Event-Buchungen. Spaltenüberschriften anklicken, um die Sortierung
             zu ändern.
@@ -249,7 +298,10 @@ export function FinanceTable({
                   Rechnung
                 </th>
               )}
-              <th scope="col" className="p-3">
+              <th
+                scope="col"
+                className="finance-actions bg-secondary sticky right-0 z-10 p-3"
+              >
                 Bearbeiten
               </th>
             </tr>
@@ -257,21 +309,28 @@ export function FinanceTable({
           <tbody>
             {visible.map((row) => (
               <tr key={row.id} className="border-t">
-                <td className="p-3">{row.bookedAt}</td>
-                <td className="p-3">{row.description || "—"}</td>
-                <td className="p-3">
+                <td data-label="Datum" className="p-3">
+                  {row.bookedAt}
+                </td>
+                <td
+                  data-label="Beschreibung"
+                  className="finance-description p-3"
+                >
+                  {row.description || "—"}
+                </td>
+                <td data-label="Einnahmen" className="p-3">
                   {row.direction === "INCOME"
                     ? `${row.amount} ${row.currency}`
                     : "—"}
                 </td>
-                <td className="p-3">
+                <td data-label="Ausgaben" className="p-3">
                   {row.direction === "EXPENSE"
                     ? `${row.amount} ${row.currency}`
                     : "—"}
                 </td>
-                <td className="p-3">
+                <td data-label="Bezahlt" className="p-3">
                   <span
-                    className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${row.isPaid ? "status-success" : "status-error"}`}
+                    className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium ${row.isPaid ? "status-success" : "status-error"}`}
                   >
                     <span
                       aria-hidden="true"
@@ -280,11 +339,14 @@ export function FinanceTable({
                     {row.isPaid ? "✓ Ja" : "Offen / unbestätigt"}
                   </span>
                 </td>
-                <td className="p-3">
+                <td data-label="Bezahlt von" className="p-3">
                   {row.isPaid ? (row.paidBy ?? "Nicht angegeben") : "—"}
                 </td>
                 {eventId && (
-                  <td className="p-3 align-top">
+                  <td
+                    data-label="Rechnung"
+                    className="finance-invoice p-3 align-top"
+                  >
                     <TransactionInvoice
                       id={row.id}
                       eventId={eventId}
@@ -294,7 +356,7 @@ export function FinanceTable({
                     />
                   </td>
                 )}
-                <td className="p-3">
+                <td className="finance-actions bg-card sticky right-0 z-10 p-3">
                   {row.currency === "EUR" && (
                     <button
                       type="button"
