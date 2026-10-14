@@ -24,6 +24,7 @@ export function isPublicPath(pathname: string): boolean {
       "/icon.png",
       "/apple-icon.png",
       "/brand/yung-logo.png",
+      "/brand/yung-tab-v2.png",
     ].includes(pathname)
   );
 }
