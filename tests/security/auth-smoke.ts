@@ -17,6 +17,25 @@ const db = new PrismaClient({
 });
 const fetchLocal = (path: string, options: RequestInit = {}) =>
   fetch(new URL(path, base), { ...options, redirect: "manual" });
+// Exercise every mutation handler, including routes not exposed in the current UI.
+// All IDs are deliberately nonexistent; tests must never modify business data.
+const mutations = [
+  ["POST", "/api/events"],
+  ["PATCH", "/api/events/security-test-missing"],
+  ["POST", "/api/events/security-test-missing/tickets"],
+  ["POST", "/api/finances/transactions"],
+  ["PATCH", "/api/finances/transactions/security-test-missing"],
+  ["DELETE", "/api/finances/transactions/security-test-missing"],
+  ["PATCH", "/api/finances/transactions/security-test-missing/invoice"],
+  ["POST", "/api/invoices"],
+  ["PATCH", "/api/invoices/security-test-missing"],
+  ["POST", "/api/tasks"],
+  ["PATCH", "/api/tasks/security-test-missing"],
+  ["POST", "/api/events/security-test-missing/documents"],
+  ["POST", "/api/events/security-test-missing/documents/upload"],
+  ["PUT", "/api/events/security-test-missing/documents/upload"],
+  ["POST", "/api/integrations/google-drive/mapping"],
+] as const;
 const assertBlockedPage = async (path: string, headers?: HeadersInit) => {
   let response = await fetchLocal(path, { headers });
   // Next 16 can normalize an invalid RSC cache key before the route executes.
@@ -83,18 +102,9 @@ try {
     });
     assert.equal(response.status, 401, path);
   }
-  for (const path of [
-    "/api/events",
-    "/api/events/private/tickets",
-    "/api/finances/transactions",
-    "/api/invoices",
-    "/api/tasks",
-    "/api/events/private/documents",
-    "/api/events/private/documents/upload",
-    "/api/integrations/google-drive/mapping",
-  ]) {
+  for (const [method, path] of mutations) {
     const response = await fetchLocal(path, {
-      method: "POST",
+      method,
       headers: {
         origin: base.origin,
         host: base.host,
@@ -150,11 +160,23 @@ try {
     405,
     "Authenticated request passes the gate, GET is unsupported here",
   );
+  // Even a valid session must not authorize a cross-site mutation. Origin is
+  // checked before reading inputs, accessing Drive or changing business records.
+  for (const [method, path] of mutations) {
+    for (const origin of [undefined, "null", "https://attacker.invalid"]) {
+      const response = await fetchLocal(path, {
+        method,
+        headers: { cookie, ...(origin ? { origin } : {}) },
+        body: new FormData(),
+      });
+      assert.equal(response.status, 403, `${method} ${path}: ${origin}`);
+    }
+  }
   await db.session.delete({ where: { sessionToken } });
   await assertBlockedPage("/events", { cookie });
   sessionToken = undefined;
   console.log(
-    "Auth smoke passed: anonymous, forged/revoked sessions, RSC and direct API access blocked; existing admin allowed.",
+    "Auth smoke passed: anonymous, forged/revoked sessions, RSC and direct API access blocked; existing admin allowed; all 15 mutation handlers reject missing/null/foreign Origin with a valid session.",
   );
 } finally {
   if (sessionToken) await db.session.deleteMany({ where: { sessionToken } });

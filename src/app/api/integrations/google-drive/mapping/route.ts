@@ -2,18 +2,13 @@ import { NextResponse } from "next/server";
 import { DriveError } from "@/modules/drive/errors";
 import { saveDriveMapping } from "@/modules/drive/server/mapping";
 import { requireDriveUser } from "@/modules/drive/server/context";
+import { requireSameOrigin } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
-function sameOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  return !origin || new URL(origin).host === request.headers.get("host");
-}
-
 export async function POST(request: Request) {
-  if (!sameOrigin(request))
-    return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 403 });
   try {
+    requireSameOrigin(request);
     await requireDriveUser();
     const form = await request.formData();
     await saveDriveMapping({
@@ -29,10 +24,7 @@ export async function POST(request: Request) {
     const status = error instanceof DriveError ? error.status : 500;
     return NextResponse.json(
       {
-        error:
-          error instanceof DriveError
-            ? "Zuordnung konnte nicht gespeichert werden."
-            : "Zuordnung konnte nicht gespeichert werden.",
+        error: "Zuordnung konnte nicht gespeichert werden.",
       },
       { status, headers: { "Cache-Control": "no-store" } },
     );
