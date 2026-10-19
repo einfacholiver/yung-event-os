@@ -9,6 +9,46 @@ import {
   invoiceNumber,
   totalCents,
 } from "./schema";
+import { DEFAULT_SENDER } from "./schema";
+it("prefills sender data for old payloads and snapshots normalized custom bank and address data", () => {
+  expect(creationSchema.parse(example).sender).toEqual(DEFAULT_SENDER);
+  const input = creationSchema.parse({
+    ...example,
+    sender: {
+      ...DEFAULT_SENDER,
+      street: "Neue Straße 12",
+      postalCity: "84503 Altötting",
+      taxNumber: "113/167/00308",
+      bankName: "Andere Bank",
+      iban: "de16 7406 1813 0005 4984 73",
+      bic: "genodef1pfk",
+    },
+  });
+  expect(input.sender).toMatchObject({
+    street: "Neue Straße 12",
+    postalCity: "84503 Altötting",
+    taxNumber: "113/167/00308",
+    bankName: "Andere Bank",
+    iban: DEFAULT_SENDER.iban,
+    bic: DEFAULT_SENDER.bic,
+  });
+  expect(
+    creationSchema.parse(JSON.parse(JSON.stringify(input))).sender,
+  ).toEqual(input.sender);
+  for (const patch of [
+    { street: "" },
+    { taxNumber: "123\n456" },
+    { iban: "DE00740618130005498473" },
+    { bic: "bad" },
+  ]) {
+    expect(
+      creationSchema.safeParse({
+        ...example,
+        sender: { ...DEFAULT_SENDER, ...patch },
+      }).success,
+    ).toBe(false);
+  }
+});
 export const example = {
   requestId: "40ebba4a-2db6-4c89-bca0-85cf257869f1",
   recipient:

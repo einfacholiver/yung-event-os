@@ -40,6 +40,17 @@ export function invoiceError(error: unknown) {
       },
       { status: error.status, headers: { "Cache-Control": "no-store" } },
     );
+  if (
+    error instanceof z.ZodError &&
+    error.issues.some((issue) => issue.path[0] === "sender")
+  )
+    return Response.json(
+      {
+        error:
+          "Bitte die Absenderangaben prüfen: alle Felder ausfüllen, eine gültige E-Mail, IBAN und BIC verwenden und keine Zeilenumbrüche eintragen.",
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
   if (error instanceof z.ZodError || error instanceof SyntaxError)
     return Response.json(
       {

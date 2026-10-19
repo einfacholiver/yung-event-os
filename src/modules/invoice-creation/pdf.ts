@@ -29,12 +29,24 @@ export async function renderInvoice(
   logo: Uint8Array,
 ) {
   const doc = await PDFDocument.create();
+  const sender = input.sender;
   doc.setTitle(`Rechnung ${number} - ${input.title}`);
-  doc.setAuthor("LIGHTSIGNAL GBR");
+  doc.setAuthor(sender.brand);
   doc.setCreationDate(new Date(`${issuedDate}T12:00:00Z`));
   doc.setModificationDate(new Date(`${issuedDate}T12:00:00Z`));
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const footerLeft = `${sender.brand}\n${sender.owners}\n${sender.street}\n${sender.postalCity}`;
+  const footerMiddle = `Tel.: ${sender.phone}\nSteuernummer: ${sender.taxNumber}\n${sender.email}`;
+  const footerRight = `${sender.bankName}\nBIC: ${sender.bic}\nIBAN:\n${sender.iban}`;
+  const footerHeight =
+    Math.max(
+      wrap(footerLeft, font, 8, 190).length,
+      wrap(footerMiddle, font, 8, 150).length,
+      wrap(footerRight, font, 8, 130).length,
+    ) * 11;
+  const footerTop = Math.min(765, 812 - footerHeight);
+  const bodyLimit = Math.min(710, footerTop - 35);
   const image = await doc.embedPng(logo);
   let page = doc.addPage([595.28, 841.89]);
   let y = 0;
@@ -54,59 +66,50 @@ export async function renderInvoice(
   };
   const footer = () => {
     page.drawLine({
-      start: { x: 48, y: 95 },
-      end: { x: 547, y: 95 },
+      start: { x: 48, y: 841.89 - footerTop + 15 },
+      end: { x: 547, y: 841.89 - footerTop + 15 },
       thickness: 0.5,
       color: rgb(0.6, 0.6, 0.6),
     });
-    block(
-      "LIGHTSIGNAL GBR\nOliver Schöfberger & Daniel Ecklkofer\nSt.-Emmeram-Str. 2\n84332 Hebertsfelden",
-      48,
-      765,
-      190,
-      8,
-      11,
-    );
-    block(
-      "Tel.: +49 175 6836506\nSteuernummer: 11316700308\nlightsignal.dj@gmail.com",
-      255,
-      765,
-      150,
-      8,
-      11,
-    );
-    block(
-      "VR-Bank Rottal-Inn eG\nBIC: GENODEF1PFK\nIBAN:\nDE16740618130005498473",
-      420,
-      765,
-      130,
-      8,
-      10,
-    );
+    block(footerLeft, 48, footerTop, 190, 8, 11);
+    block(footerMiddle, 255, footerTop, 150, 8, 11);
+    block(footerRight, 420, footerTop, 130, 8, 11);
     draw(`Seite ${doc.getPageCount()}`, 505, 829, 8);
   };
   const newPage = () => {
     footer();
     page = doc.addPage([595.28, 841.89]);
-    draw(`LIGHTSIGNAL GBR · Rechnung ${number}`, 48, 48, 11, true);
+    block(`${sender.brand} · Rechnung ${number}`, 48, 48, 499, 11, 14);
     y = 85;
   };
   const ensure = (height: number) => {
-    if (y + height > 720) newPage();
+    if (y + height > bodyLimit) newPage();
   };
-  draw("Daniel Ecklkofer & Oliver Schöfberger GBR", 48, 49, 8);
-  draw("St.-Emmeram-Str. 2 · 84332 Hebertsfelden", 48, 61, 8);
+  const ownerHeight = block(sender.owners, 48, 49, 300, 8, 11);
+  const returnHeight = block(
+    `${sender.street} · ${sender.postalCity}`,
+    48,
+    49 + ownerHeight + 2,
+    300,
+    8,
+    11,
+  );
   page.drawImage(image, { x: 390, y: 738, width: 145, height: 65 });
-  block(
-    "LIGHTSIGNAL GBR\nSt.-Emmeram-Str. 2\n84332 Hebertsfelden\n\nTel.: +49 175 6836506\nlightsignal.dj@gmail.com",
+  const senderHeight = block(
+    `${sender.brand}\n${sender.street}\n${sender.postalCity}\n\nTel.: ${sender.phone}\n${sender.email}`,
     390,
     123,
     160,
     9,
     13,
   );
-  const recipientHeight = block(input.recipient, 48, 115, 300, 11, 15);
-  const heading = Math.max(259, 115 + recipientHeight + 30);
+  const recipientTop = Math.max(115, 49 + ownerHeight + returnHeight + 18);
+  const recipientHeight = block(input.recipient, 48, recipientTop, 300, 11, 15);
+  const heading = Math.max(
+    259,
+    recipientTop + recipientHeight + 30,
+    123 + senderHeight + 25,
+  );
   draw("Rechnung", 48, heading, 22, true);
   draw(`Rechnung Nr. ${number}`, 48, heading + 32, 11);
   draw(`Datum: ${date(issuedDate)}`, 410, heading + 32, 10);
@@ -131,16 +134,17 @@ export async function renderInvoice(
     ].forEach(([t, x]) => draw(String(t), Number(x), y + 8, 9, true));
     y += 35;
   };
+  ensure(75);
   header();
   input.items.forEach((item, index) => {
     const lines = wrap(item.description, font, 9.5, 246);
     let offset = 0;
     do {
-      if (y + 40 > 710) {
+      if (y + 40 > bodyLimit) {
         newPage();
         header();
       }
-      const available = Math.max(1, Math.floor((710 - y - 14) / 13));
+      const available = Math.max(1, Math.floor((bodyLimit - y - 14) / 13));
       const segment = lines.slice(offset, offset + available);
       draw(`${index + 1}${offset ? " …" : ""}`, 54, y, 9.5);
       segment.forEach((line, i) => draw(line, 85, y + i * 13, 9.5));
@@ -184,7 +188,7 @@ export async function renderInvoice(
     for (const p of doc.getPages())
       p.drawText("VORSCHAU - keine ausgestellte Rechnung", {
         x: 48,
-        y: 102,
+        y: 841.89 - footerTop + 24,
         size: 9,
         font: bold,
         color: rgb(0.65, 0.12, 0.12),

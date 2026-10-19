@@ -22,6 +22,21 @@ und Nummer stammen vom Server, Zeitzone Europe/Berlin. Leistungsdatum und
 Zahlungsdatum bleiben davon unabhängig. Umlaute werden unterstützt, nicht von
 den verwendeten PDF-Schriften unterstützte Zeichen wie Emojis werden abgewiesen.
 
+### Absender und Bankverbindung ändern
+
+Unter **Absender: LIGHTSIGNAL GBR** sind Firmenname, Inhaberzeile, Straße,
+PLZ/Ort, Telefon, E-Mail und Steuernummer bearbeitbar. Die Inhaberzeile ist mit
+**Daniel Ecklkofer & Oliver Schöfberger GbR** vorausgefüllt. Die bisherigen
+Adress-, Kontakt- und Steuerangaben bleiben die Vorauswahl. Unter **Bankdaten
+bearbeiten** lassen sich Bankname, IBAN und BIC ändern; auch hier ist die
+bisherige Verbindung vorbelegt. IBAN-Prüfziffer und BIC-Format werden geprüft.
+
+Die Änderungen gelten für die jeweilige Rechnung und werden in ihrem Snapshot
+gespeichert. Vorschau, Absenderblock, Rücksendezeile und Fußzeilen verwenden
+diese Angaben. Bereits ausgestellte PDFs werden nicht neu erzeugt oder geändert.
+Eine neu geladene Seite bzw. **Weitere Rechnung erstellen** verwendet wieder
+die bisherigen Standardwerte; es werden keine globalen Stammdaten überschrieben.
+
 ## Nummerierung und Wiederholungen
 
 Format: `JJJJ-MM-(1000 + Monatszähler)`, beispielsweise `2026-10-1001`,
@@ -94,7 +109,7 @@ bei nicht verfügbarer Drive-Verbindung herunterladen; Anmeldung bleibt nötig.
   bewusste Erstellung einer Rechnung ausgelöst und wurde beim Entwicklertest
   nicht gegen das echte Drive ausgeführt.
 
-Abschlussstand: Lint und Typprüfung bestanden; 48 Testdateien mit 186 Tests grün.
+Abschlussstand: Lint und Typprüfung bestanden; 48 Testdateien mit 187 Tests grün.
 Die bisherigen acht Browsertests und der zusätzliche Rechnungs-Vorschautest
 bestanden. Der erweiterte Auth-Smoke-Test blockiert unerlaubte Zugriffe auf alle
 18 Schreibhandler. Die Vorschau und Browsertests verbrauchten keine Rechnungsnummer.

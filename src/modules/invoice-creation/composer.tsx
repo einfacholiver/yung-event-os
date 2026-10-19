@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, FileSearch, FilePlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { euro, totalCents, type InvoiceInput } from "./schema";
+import { euro, totalCents } from "./money";
+import type { InvoiceInput, InvoiceSender } from "./schema";
+import { SenderFields } from "./sender-fields";
 
 const field =
   "bg-background border-input mt-1 w-full rounded-lg border px-3 py-2.5 text-sm";
@@ -76,9 +78,11 @@ export function DriveRetry({
 export function InvoiceComposer({
   events,
   canWrite,
+  defaultSender,
 }: {
   events: { id: string; name: string; mapped: boolean }[];
   canWrite: boolean;
+  defaultSender: InvoiceSender;
 }) {
   const router = useRouter();
   const requestId = useRef<string | null>(null);
@@ -109,6 +113,12 @@ export function InvoiceComposer({
     const values = new FormData(form);
     requestId.current ??= crypto.randomUUID();
     return {
+      sender: Object.fromEntries(
+        Object.keys(defaultSender).map((key) => [
+          key,
+          String(values.get(`sender.${key}`) ?? ""),
+        ]),
+      ) as InvoiceSender,
       requestId: requestId.current,
       recipient: String(values.get("recipient") ?? ""),
       title: String(values.get("title") ?? ""),
@@ -387,13 +397,12 @@ export function InvoiceComposer({
           </section>
           <section className="bg-card space-y-3 rounded-xl border p-5">
             <h2 className="font-semibold">Absender: LIGHTSIGNAL GBR</h2>
+            <SenderFields defaults={defaultSender} />
             <p className="text-muted-foreground text-sm">
-              Daniel Ecklkofer & Oliver Schöfberger · St.-Emmeram-Str. 2 · 84332
-              Hebertsfelden
-            </p>
-            <p className="text-muted-foreground text-sm">
-              Logo, Kontakt-, Steuer- und Bankangaben sowie der Hinweis nach §19
-              UStG werden aus deiner Vorlage übernommen.
+              Absender-, Kontakt-, Steuer- und Bankangaben sind vorausgefüllt
+              und für diese Rechnung änderbar. Logo und Hinweis nach §19 UStG
+              bleiben erhalten. Die Angaben werden mit der fertigen Rechnung
+              gespeichert.
             </p>
             <label className="flex items-start gap-3 text-sm">
               <input

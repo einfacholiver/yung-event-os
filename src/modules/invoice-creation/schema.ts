@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { totalCents } from "./money";
+export { cents, totalCents, euro, amountString } from "./money";
 
 // PDF standard fonts cover Latin characters used in the supplied template.
 // Reject unsupported glyphs instead of silently corrupting names in an invoice.
@@ -17,8 +19,61 @@ const decimal = z
   .trim()
   .regex(/^\d{1,7}(?:[.,]\d{1,2})?$/)
   .transform((v) => v.replace(",", "."));
+const line = (max: number) =>
+  text(max).refine(
+    (v) => !/[\r\n\t]/.test(v),
+    "Bitte eine einzelne Zeile eingeben.",
+  );
+export const DEFAULT_SENDER = {
+  brand: "LIGHTSIGNAL GBR",
+  owners: "Daniel Ecklkofer & Oliver Schöfberger GbR",
+  street: "St.-Emmeram-Str. 2",
+  postalCity: "84332 Hebertsfelden",
+  phone: "+49 175 6836506",
+  email: "lightsignal.dj@gmail.com",
+  taxNumber: "11316700308",
+  bankName: "VR-Bank Rottal-Inn eG",
+  iban: "DE16740618130005498473",
+  bic: "GENODEF1PFK",
+};
+function validIban(value: string) {
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(value)) return false;
+  let remainder = 0;
+  for (const char of value.slice(4) + value.slice(0, 4)) {
+    const digits = /[A-Z]/.test(char) ? String(char.charCodeAt(0) - 55) : char;
+    for (const digit of digits)
+      remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+  return remainder === 1;
+}
+export const senderSchema = z.object({
+  brand: line(40),
+  owners: line(100),
+  street: line(80),
+  postalCity: line(80),
+  phone: line(40),
+  email: line(100).pipe(z.email()),
+  taxNumber: line(40),
+  bankName: line(60),
+  iban: z
+    .string()
+    .max(80)
+    .transform((v) => v.replace(/\s/g, "").toUpperCase())
+    .refine(validIban, "Bitte eine gültige IBAN eingeben."),
+  bic: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(
+      /^[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?$/,
+      "BIC mit 8 oder 11 Zeichen eingeben.",
+    ),
+});
+export type InvoiceSender = z.infer<typeof senderSchema>;
 export const creationSchema = z
   .object({
+    // Existing stored payloads predate these fields; their PDF bytes stay intact.
+    sender: senderSchema.default(() => ({ ...DEFAULT_SENDER })),
     requestId: z.uuid(),
     recipient: text(500).refine(
       (v) => v.split(/\r\n?|\n/).length <= 8,
@@ -82,22 +137,6 @@ export const creationSchema = z
       });
   });
 export type InvoiceInput = z.infer<typeof creationSchema>;
-export function cents(value: string) {
-  const [whole, fraction = ""] = value.replace(",", ".").split(".");
-  return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0"));
-}
-export function totalCents(items: InvoiceInput["items"]) {
-  return items.reduce(
-    (sum, item) => sum + cents(item.unitPrice) * BigInt(item.quantity),
-    0n,
-  );
-}
-export function amountString(value: bigint) {
-  return `${value / 100n}.${String(value % 100n).padStart(2, "0")}`;
-}
-export function euro(value: bigint) {
-  return `${(value / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${String(value % 100n).padStart(2, "0")} EUR`;
-}
 export function berlinDate(now: Date) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Berlin",

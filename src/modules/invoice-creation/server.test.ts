@@ -127,6 +127,15 @@ it("continues existing monthly numbers and repeats the same issuance without ano
   expect(saved!.number).toBe(`${berlinDate(new Date()).slice(0, 7)}-1008`);
   expect(mocks.counter).toHaveBeenCalledOnce();
   expect(mocks.generate).toHaveBeenCalledOnce();
+  await expect(
+    createInvoiceDocument({
+      ...input(),
+      sender: {
+        ...(saved!.payload as { sender: object }).sender,
+        street: "Andere Straße 1",
+      },
+    }),
+  ).rejects.toMatchObject({ status: 409 });
   expect(mocks.client).toHaveBeenCalledWith("test-token", "google-subject");
   expect(mocks.invoice).toHaveBeenCalledWith(
     expect.objectContaining({

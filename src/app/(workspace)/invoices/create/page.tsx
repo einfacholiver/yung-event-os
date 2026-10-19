@@ -3,6 +3,7 @@ import { getDb } from "@/server/db/client";
 import { hasDriveWriteScope } from "@/modules/drive/config";
 import { enableInvoiceCreation } from "@/modules/drive/actions";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_SENDER } from "@/modules/invoice-creation/schema";
 import {
   InvoiceComposer,
   DriveRetry,
@@ -80,6 +81,7 @@ export default async function CreateInvoicePage() {
         </section>
       )}
       <InvoiceComposer
+        defaultSender={DEFAULT_SENDER}
         canWrite={canWrite}
         events={events.map((event) => ({
           id: event.id,
