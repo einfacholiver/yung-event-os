@@ -13,7 +13,8 @@ export async function PATCH(
     const input = schema.parse(await request.json());
     const { id } = await params;
     const invoice = await getDb().invoice.updateMany({
-      where: { id, organizationId: user.organizationId },
+      // Issued PDF snapshots must not diverge from their invoice record.
+      where: { id, organizationId: user.organizationId, document: { is: null } },
       data: input,
     });
     if (!invoice.count)

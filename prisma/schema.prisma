@@ -80,6 +80,8 @@ model Organization {
   tasks               Task[]
   permissions         Permission[]
   activityLogs        ActivityLog[]
+  invoiceDocuments    InvoiceDocument[]
+  invoiceCounters     InvoiceCounter[]
 }
 
 model Event {
@@ -239,6 +241,7 @@ model Transaction {
 }
 
 model Invoice {
+  document       InvoiceDocument?
   id             String           @id @default(cuid())
   organizationId String
   eventId        String?
@@ -262,6 +265,42 @@ model Invoice {
   @@index([organizationId, eventId])
   @@index([organizationId, driveItemId])
   @@index([organizationId, status, dueAt])
+}
+
+// Issued PDFs are immutable snapshots, separate from manually tracked invoices.
+model InvoiceDocument {
+  id               String       @id @default(cuid())
+  organizationId   String
+  invoiceId        String       @unique
+  requestId        String
+  number           String
+  period           String       @db.VarChar(7)
+  sequence         Int
+  payload          Json
+  pdf              Bytes
+  fileName         String
+  parentExternalId String
+  externalId       String
+  connectionId     String
+  uploadedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invoice          Invoice      @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, requestId])
+  @@unique([organizationId, invoiceId])
+  @@unique([organizationId, number])
+  @@unique([organizationId, period, sequence])
+  @@index([organizationId, createdAt])
+}
+
+model InvoiceCounter {
+  organizationId String
+  period         String       @db.VarChar(7)
+  lastSequence   Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, period])
 }
 
 model Task {

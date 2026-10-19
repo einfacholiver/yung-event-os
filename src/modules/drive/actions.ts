@@ -17,6 +17,19 @@ export async function connectGoogleDrive() {
   await requireDriveUser();
   await signIn("google", { redirectTo: DRIVE_SETTINGS_PATH });
 }
+
+export async function enableInvoiceCreation() {
+  await requireDriveUser();
+  await signIn(
+    "google",
+    { redirectTo: "/invoices/create" },
+    {
+      scope: `openid email profile ${DRIVE_WRITE_SCOPE}`,
+      prompt: "consent select_account",
+      access_type: "offline",
+    },
+  );
+}
 export async function enableEventFolderCreation() {
   await requireDriveUser();
   await signIn(

@@ -3,6 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/invoice-documents": [
+      "./src/modules/invoice-creation/assets/lightsignal.png",
+    ],
+    "/api/invoice-documents/preview": [
+      "./src/modules/invoice-creation/assets/lightsignal.png",
+    ],
+  },
   async headers() {
     return [
       {

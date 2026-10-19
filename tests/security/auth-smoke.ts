@@ -20,6 +20,9 @@ const fetchLocal = (path: string, options: RequestInit = {}) =>
 // Exercise every mutation handler, including routes not exposed in the current UI.
 // All IDs are deliberately nonexistent; tests must never modify business data.
 const mutations = [
+  ["POST", "/api/invoice-documents"],
+  ["POST", "/api/invoice-documents/preview"],
+  ["POST", "/api/invoice-documents/security-test-missing/drive"],
   ["POST", "/api/events"],
   ["PATCH", "/api/events/security-test-missing"],
   ["POST", "/api/events/security-test-missing/tickets"],
@@ -77,6 +80,7 @@ try {
     "/finances",
     "/settings/integrations/google-drive",
     "/events/private.png",
+    "/invoices/create",
   ])
     await assertBlockedPage(path);
   await assertBlockedPage("/events", {
@@ -96,6 +100,7 @@ try {
     "/api/integrations/google-drive/browse",
     "/api/events/private/documents/private/preview",
     "/api/events/private/media/private",
+    "/api/invoice-documents/security-test-missing/pdf",
   ]) {
     const response = await fetchLocal(path, {
       headers: { cookie: "authjs.session-token=forged-session" },
@@ -176,7 +181,7 @@ try {
   await assertBlockedPage("/events", { cookie });
   sessionToken = undefined;
   console.log(
-    "Auth smoke passed: anonymous, forged/revoked sessions, RSC and direct API access blocked; existing admin allowed; all 15 mutation handlers reject missing/null/foreign Origin with a valid session.",
+    `Auth smoke passed: anonymous, forged/revoked sessions, RSC and direct API access blocked; existing admin allowed; all ${mutations.length} mutation handlers reject missing/null/foreign Origin with a valid session.`,
   );
 } finally {
   if (sessionToken) await db.session.deleteMany({ where: { sessionToken } });

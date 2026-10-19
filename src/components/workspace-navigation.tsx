@@ -2,11 +2,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarDays, FolderSync, ScanLine, Settings2 } from "lucide-react";
+import {
+  CalendarDays,
+  FilePlus2,
+  FolderSync,
+  ScanLine,
+  Settings2,
+} from "lucide-react";
 import { logoutAdmin } from "@/server/auth/actions";
 
 const links = [
   { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/invoices/create", label: "Rechnungen erstellen", icon: FilePlus2 },
   { href: "/check-in", label: "Check-in System", icon: ScanLine },
   {
     href: "/settings/integrations/google-drive",

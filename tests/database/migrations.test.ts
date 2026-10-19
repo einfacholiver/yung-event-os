@@ -34,6 +34,7 @@ beforeAll(async () => {
     "20261004040000_ticket_orders",
     "20261005000000_transaction_payment",
     "20261005010000_ticket_sales_items",
+    "20261019000000_invoice_creation",
   ]) {
     await db.exec(
       readFileSync(`prisma/migrations/${name}/migration.sql`, "utf8"),
@@ -52,6 +53,31 @@ afterAll(async () => {
 });
 
 describe("core model SQL migration", () => {
+  it("keeps monthly invoice allocation unique and prevents cross-organization invoice snapshots", async () => {
+    await db.exec(
+      `INSERT INTO "InvoiceCounter" ("organizationId",period,"lastSequence") VALUES ('org-a','2026-10',1)`,
+    );
+    await expect(
+      db.exec(
+        `INSERT INTO "InvoiceCounter" ("organizationId",period,"lastSequence") VALUES ('org-a','2026-10',2)`,
+      ),
+    ).rejects.toMatchObject({ code: "23505" });
+    await db.exec(
+      `INSERT INTO "Invoice" (id,"organizationId",counterparty,direction,"totalAmount") VALUES ('issued-a','org-a','A','OUTGOING',500)`,
+    );
+    await db.exec(
+      `INSERT INTO "InvoiceDocument" (id,"organizationId","invoiceId","requestId",number,period,sequence,payload,pdf,"fileName","parentExternalId","externalId","connectionId") VALUES ('doc-a','org-a','issued-a','request-a','2026-10-1001','2026-10',1,'{}','\\x25504446','a.pdf','parent','file','drive-a')`,
+    );
+    await expect(
+      db.exec(
+        `UPDATE "InvoiceDocument" SET "organizationId"='org-b' WHERE id='doc-a'`,
+      ),
+    ).rejects.toMatchObject({ code: "23503" });
+    const next = await db.query<{ lastSequence: number }>(
+      `INSERT INTO "InvoiceCounter" ("organizationId",period,"lastSequence") VALUES ('org-a','2026-10',99) ON CONFLICT ("organizationId",period) DO UPDATE SET "lastSequence"="InvoiceCounter"."lastSequence"+1 RETURNING "lastSequence"`,
+    );
+    expect(next.rows[0].lastSequence).toBe(2);
+  });
   it("validates article totals and their organization assignment", async () => {
     await db.exec(
       `INSERT INTO "TicketSalesItem" (id,"organizationId","eventId",description,category,quantity,"unitPrice","grossRevenue",position,"updatedAt") VALUES ('sale','org-a','event-a','Regular','TICKET',251,20,5020,0,NOW())`,
@@ -104,7 +130,7 @@ describe("core model SQL migration", () => {
     expect(result.rows[0].createdAt).toBeTruthy();
   });
 
-  it("preserves core/auth tables and adds ticket orders", async () => {
+  it("preserves core/auth tables and adds ticket orders and invoice documents", async () => {
     const result = await db.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
     );
@@ -118,6 +144,8 @@ describe("core model SQL migration", () => {
         "DriveFolderMapping",
         "Transaction",
         "Invoice",
+        "InvoiceCounter",
+        "InvoiceDocument",
         "Task",
         "Permission",
         "ActivityLog",
